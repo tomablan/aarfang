@@ -1,0 +1,26 @@
+# Dépendances
+node_modules/
+
+# Build outputs
+dist/
+apps/web/build/
+.svelte-kit/
+
+# Environnement — ne jamais committer les secrets
+.env
+.env.local
+*.local
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes locaux
+.docker/
+
+# Claude Code (local uniquement)
+.claude/

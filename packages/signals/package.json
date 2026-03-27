@@ -1,0 +1,16 @@
+{
+  "name": "@aarfang/signals",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "tsx": "^4.19.2",
+    "typescript": "^5.4.5"
+  }
+}

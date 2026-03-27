@@ -1,0 +1,15 @@
+{
+  "name": "aarfang",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter './apps/*' dev",
+    "build": "pnpm --filter './packages/*' build && pnpm --filter './apps/*' build",
+    "db:migrate": "pnpm --filter @aarfang/db migrate",
+    "db:seed": "pnpm --filter @aarfang/db seed",
+    "db:studio": "pnpm --filter @aarfang/db studio"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

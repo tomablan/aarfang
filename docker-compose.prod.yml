@@ -1,0 +1,81 @@
+# Stack de production — à utiliser avec Coolify (Docker Compose deployment)
+#
+# Variables d'environnement à définir dans Coolify :
+#
+#   DB_USER, DB_PASSWORD, DB_NAME
+#   JWT_SECRET        — openssl rand -base64 64
+#   ENCRYPTION_KEY    — openssl rand -hex 32
+#   APP_URL           — https://app.yourdomain.com
+#   API_URL           — https://api.yourdomain.com  (utilisé comme VITE_API_URL)
+#   CORS_ORIGINS      — https://app.yourdomain.com
+#
+# Les variables SERVICE_FQDN_* sont automatiquement injectées par Coolify.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-aarfang}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-aarfang}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-aarfang}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-aarfang}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-aarfang}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      API_PORT: 3001
+      API_HOST: 0.0.0.0
+      CORS_ORIGINS: ${CORS_ORIGINS:-${APP_URL}}
+      APP_URL: ${APP_URL}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-alerts@yourdomain.com}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_URL: ${API_URL:-}
+    environment:
+      ORIGIN: ${APP_URL}
+      PORT: 3000
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:

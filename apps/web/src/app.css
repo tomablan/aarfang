@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+:root {
+  --color-good: #22c55e;
+  --color-warning: #f59e0b;
+  --color-critical: #ef4444;
+  --color-skipped: #94a3b8;
+}
+
+.score-good { color: var(--color-good); }
+.score-warning { color: var(--color-warning); }
+.score-critical { color: var(--color-critical); }

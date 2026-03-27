@@ -1,0 +1,32 @@
+import { URL } from 'node:url'
+import type { Signal, SignalResult, AuditContext } from '../types.js'
+
+export const robotsTxt: Signal = {
+  id: 'robots_txt',
+  category: 'seo_technique',
+  weight: 1,
+  async analyze(ctx: AuditContext): Promise<SignalResult> {
+    const base = new URL(ctx.page.finalUrl).origin
+    const robotsUrl = `${base}/robots.txt`
+
+    try {
+      const res = await fetch(robotsUrl, { redirect: 'follow', signal: AbortSignal.timeout(8000) })
+      if (!res.ok) {
+        return { score: 20, status: 'warning', details: { url: robotsUrl, statusCode: res.status }, recommendations: ['Créer un fichier robots.txt pour contrôler l\'indexation.'], summary: `robots.txt absent (HTTP ${res.status})` }
+      }
+      const text = await res.text()
+      const hasDisallowAll = /Disallow:\s*\//m.test(text) && /User-agent:\s*\*/m.test(text)
+      const hasSitemapRef = /Sitemap:/i.test(text)
+
+      if (hasDisallowAll) {
+        return { score: 20, status: 'critical', details: { url: robotsUrl, hasDisallowAll, hasSitemapRef }, recommendations: ['Le fichier robots.txt bloque tout le crawl (Disallow: /). Vérifier la configuration.'], summary: 'Disallow: / détecté — crawl entièrement bloqué' }
+      }
+      const score = hasSitemapRef ? 100 : 80
+      const recommendations = hasSitemapRef ? [] : ['Ajouter une référence au sitemap.xml dans robots.txt.']
+      const summary = hasSitemapRef ? 'robots.txt valide avec référence sitemap' : 'robots.txt présent mais sans référence au sitemap'
+      return { score, status: score === 100 ? 'good' : 'warning', details: { url: robotsUrl, hasSitemapRef, hasDisallowAll }, recommendations, summary }
+    } catch {
+      return { score: 0, status: 'warning', details: { url: robotsUrl, error: 'unreachable' }, recommendations: ['Créer un fichier robots.txt accessible.'], summary: 'robots.txt inaccessible' }
+    }
+  },
+}

@@ -1,0 +1,9 @@
+**/.git
+**/.svelte-kit
+**/node_modules
+**/dist
+**/build
+**/.env
+**/.env.local
+**/coverage
+**/*.log
