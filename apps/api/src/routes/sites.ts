@@ -85,6 +85,7 @@ app.get('/:siteId', async (c) => {
     return c.json({ error: 'Site not found' }, 404)
   }
   const [site] = await db.select().from(sites).where(eq(sites.id, siteId)).limit(1)
+  if (!site) return c.json({ error: 'Site not found' }, 404)
   return c.json(site)
 })
 
