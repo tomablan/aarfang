@@ -105,6 +105,97 @@ FORMAT ATTENDU (utilise exactement ces sections en markdown) :
 Écris en français professionnel. Sois concret, évite le jargon technique excessif. Pense au client final qui ne connaît pas forcément le SEO ou la technique.`
 }
 
+export interface AiRecommendationsInput {
+  site: {
+    name: string
+    url: string
+    cmsType: string | null
+    isEcommerce: boolean
+  }
+  scores: {
+    global: number
+    technique: number
+    securite: number
+    seo_technique: number
+    seo_local: number
+    opportunites: number
+    conformite?: number
+  }
+  issues: {
+    signalId: string
+    category: string
+    score: number | null
+    status: string
+    recommendations: string[]
+  }[]
+}
+
+function buildRecommendationsPrompt(input: AiRecommendationsInput): string {
+  const { site, scores, issues } = input
+
+  const criticalAndWarning = issues
+    .filter((i) => i.status === 'critical' || i.status === 'warning')
+    .slice(0, 12)
+    .map((i) => `- ${SIGNAL_LABELS[i.signalId] ?? i.signalId} (${i.status}, score ${i.score ?? 'N/A'}/100)`)
+    .join('\n')
+
+  return `Tu es un expert en stratégie digitale et en benchmarking sectoriel. Analyse le site suivant et génère des recommandations stratégiques basées sur les pratiques de référence dans son secteur d'activité.
+
+SITE AUDITÉ :
+- Nom : ${site.name}
+- URL : ${site.url}
+- CMS : ${site.cmsType ?? 'Non détecté'}
+- Type : ${site.isEcommerce ? 'Site e-commerce' : 'Site vitrine / service'}
+
+SCORES D'AUDIT :
+- Score global : ${scores.global}/100
+- Sécurité : ${scores.securite}/100
+- Conformité : ${scores.conformite ?? 'N/A'}/100
+- Technique : ${scores.technique}/100
+- SEO Technique : ${scores.seo_technique}/100
+- SEO Local : ${scores.seo_local}/100
+- Expérience de navigation : ${scores.opportunites}/100
+
+POINTS FAIBLES DÉTECTÉS :
+${criticalAndWarning || '(aucun problème majeur détecté)'}
+
+MISSION :
+1. Identifie le secteur d'activité probable du site (restauration, immobilier, e-commerce mode, services B2B, artisan, santé, etc.) en te basant sur son nom et son URL.
+2. Pour ce secteur, cite ce que font les acteurs performants en termes de présence digitale.
+3. Génère 4 à 6 recommandations stratégiques concrètes et priorisées, en expliquant pour chacune l'impact attendu et ce que font les leaders du secteur.
+
+FORMAT ATTENDU (markdown) :
+
+## Secteur identifié
+[1 phrase : quel secteur, quelle cible probable]
+
+## Ce que font les leaders de ce secteur
+[3-4 bullet points sur les pratiques digitales standard des acteurs performants dans ce secteur]
+
+## Recommandations prioritaires
+
+### 1. [Titre de la recommandation]
+**Impact :** [ce qui va changer concrètement]
+**Référence sectorielle :** [ce que font les concurrents performants]
+
+### 2. [Titre]
+...
+
+[Répéter pour 4 à 6 recommandations]
+
+Écris en français professionnel. Sois précis, concret, et ancré dans la réalité du secteur. Évite les généralités — chaque recommandation doit être directement actionnable.`
+}
+
+export async function generateAiRecommendations(
+  input: AiRecommendationsInput,
+  claudeApiKey: string | undefined,
+  openaiApiKey: string | undefined,
+): Promise<string> {
+  if (claudeApiKey) return callClaude(buildRecommendationsPrompt(input), claudeApiKey)
+  if (openaiApiKey) return callOpenAI(buildRecommendationsPrompt(input), openaiApiKey)
+  throw new Error("Aucune intégration IA configurée pour cette organisation.")
+}
+
 export async function generateAiSummary(
   input: AiSummaryInput,
   claudeApiKey: string | undefined,

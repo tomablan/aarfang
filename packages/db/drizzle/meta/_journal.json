@@ -36,6 +36,34 @@
       "when": 1774627000000,
       "tag": "0004_site_ai_summary",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1774628000000,
+      "tag": "0005_conformite_category",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774629000000,
+      "tag": "0006_site_ai_recommendations",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1774630000000,
+      "tag": "0007_sea_category",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1774631000000,
+      "tag": "0008_webhooks",
+      "breakpoints": true
     }
   ]
 }

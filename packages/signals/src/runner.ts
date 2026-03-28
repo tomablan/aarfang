@@ -23,6 +23,32 @@ import { crawlRedirects } from './signals/crawl_redirects.js'
 import { crawlThinContent } from './signals/crawl_thin_content.js'
 import { crawlDepth } from './signals/crawl_depth.js'
 import { crawlNoindex } from './signals/crawl_noindex.js'
+import { crawlInternalLinking } from './signals/crawl_internal_linking.js'
+import { crawlCannibalization } from './signals/crawl_cannibalization.js'
+import { crawlMetaCoverage } from './signals/crawl_meta_coverage.js'
+import { gscSearchPerformance } from './signals/gsc_search_performance.js'
+import { cookieConsent } from './signals/cookie_consent.js'
+import { legalPages } from './signals/legal_pages.js'
+import { localSchema } from './signals/local_schema.js'
+import { reviewSchema } from './signals/review_schema.js'
+import { coreWebVitals } from './signals/core_web_vitals.js'
+import { socialPresence } from './signals/social_presence.js'
+import { trustSignals } from './signals/trust_signals.js'
+import { liveChat } from './signals/live_chat.js'
+import { keywordConsistency } from './signals/keyword_consistency.js'
+import { gscKeywordOpportunities } from './signals/gsc_keyword_opportunities.js'
+import { accessibilityInteractive } from './signals/accessibility_interactive.js'
+import { accessibilityStructure } from './signals/accessibility_structure.js'
+import { analyticsSetup } from './signals/analytics_setup.js'
+import { googleAdsTag } from './signals/google_ads_tag.js'
+import { metaPixel } from './signals/meta_pixel.js'
+import { seaReadiness } from './signals/sea_readiness.js'
+import { landingPageDetection } from './signals/landing_page_detection.js'
+import { leadCapture } from './signals/lead_capture.js'
+import { blogPresence } from './signals/blog_presence.js'
+import { contentFreshness } from './signals/content_freshness.js'
+import { videoPresence } from './signals/video_presence.js'
+import { pricingPage } from './signals/pricing_page.js'
 
 // Registre de tous les signaux disponibles
 export const ALL_SIGNALS: Signal[] = [
@@ -30,6 +56,8 @@ export const ALL_SIGNALS: Signal[] = [
   httpsEnabled,
   sslExpiry,
   securityHeaders,
+  cookieConsent,
+  legalPages,
   // SEO Technique
   metaTitle,
   metaDescription,
@@ -42,12 +70,27 @@ export const ALL_SIGNALS: Signal[] = [
   openGraph,
   // Technique
   pageSpeed,
+  coreWebVitals,
   serverResponseTime,
   viewportMeta,
   // Opportunités
   ctaPresence,
   phoneVisible,
   contactForm,
+  socialPresence,
+  trustSignals,
+  liveChat,
+  gscKeywordOpportunities,
+  leadCapture,
+  blogPresence,
+  videoPresence,
+  pricingPage,
+  // SEO Local — Google Search Console + schémas locaux
+  gscSearchPerformance,
+  localSchema,
+  reviewSchema,
+  keywordConsistency,
+  contentFreshness,
   // SEO Technique — Crawl (Screaming Frog)
   crawlDuplicateTitles,
   crawlBrokenPages,
@@ -55,6 +98,18 @@ export const ALL_SIGNALS: Signal[] = [
   crawlThinContent,
   crawlDepth,
   crawlNoindex,
+  crawlInternalLinking,
+  crawlCannibalization,
+  crawlMetaCoverage,
+  // Accessibilité WCAG
+  accessibilityInteractive,
+  accessibilityStructure,
+  // SEA — Search Engine Advertising
+  analyticsSetup,
+  googleAdsTag,
+  metaPixel,
+  seaReadiness,
+  landingPageDetection,
 ]
 
 export async function runSignals(ctx: AuditContext): Promise<AuditSignalResult[]> {

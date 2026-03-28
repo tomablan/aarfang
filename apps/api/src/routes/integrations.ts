@@ -11,17 +11,30 @@ app.use('*', authMiddleware)
 app.get('/', async (c) => {
   const orgId = c.get('orgId') as string
   const db = getDb()
-  const rows = await db.select({
-    id: integrations.id,
-    orgId: integrations.orgId,
-    siteId: integrations.siteId,
-    provider: integrations.provider,
-    status: integrations.status,
-    createdAt: integrations.createdAt,
-    lastTestedAt: integrations.lastTestedAt,
-  }).from(integrations).where(eq(integrations.orgId, orgId))
+  const rows = await db.select().from(integrations).where(eq(integrations.orgId, orgId))
 
-  return c.json(rows)
+  return c.json(rows.map((row) => {
+    // Pour GSC : indiquer si le flow OAuth a été complété (refresh token présent)
+    let oauthConnected: boolean | undefined
+    if (row.provider === 'gsc') {
+      try {
+        const creds = JSON.parse(decrypt(row.credentials))
+        oauthConnected = !!(creds.refreshToken && creds.accessToken)
+      } catch {
+        oauthConnected = false
+      }
+    }
+    return {
+      id: row.id,
+      orgId: row.orgId,
+      siteId: row.siteId,
+      provider: row.provider,
+      status: row.status,
+      createdAt: row.createdAt,
+      lastTestedAt: row.lastTestedAt,
+      ...(oauthConnected !== undefined ? { oauthConnected } : {}),
+    }
+  }))
 })
 
 // Créer ou remplacer une intégration (upsert par orgId + provider + siteId)
@@ -135,6 +148,18 @@ async function testIntegration(provider: string, credentials: Record<string, str
           headers: { Authorization: `Bearer ${token}` },
           signal: AbortSignal.timeout(10_000),
         })
+        return { ok: res.ok }
+      }
+      case 'gsc': {
+        // Vérifier que les credentials OAuth sont présents et le token valide
+        const accessToken = credentials.accessToken
+        if (!credentials.clientId || !credentials.clientSecret) return { ok: false, error: 'Client ID et Client Secret requis' }
+        if (!accessToken) return { ok: false, error: 'Non connecté — cliquez sur "Connecter avec Google"' }
+        const res = await fetch('https://www.googleapis.com/webmasters/v3/sites', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          signal: AbortSignal.timeout(10_000),
+        })
+        if (res.status === 401) return { ok: false, error: 'Token expiré ou révoqué — reconnectez-vous' }
         return { ok: res.ok }
       }
       case 'claude': {

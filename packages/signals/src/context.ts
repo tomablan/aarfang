@@ -4,7 +4,7 @@ const USER_AGENT = 'Mozilla/5.0 (compatible; Aarfang/1.0; +https://aarfang.io)'
 const FETCH_TIMEOUT_MS = 15_000
 
 export async function buildAuditContext(
-  site: { id: string; url: string; name: string; cmsType: string | null },
+  site: { id: string; url: string; name: string; cmsType: string | null; isEcommerce: boolean },
   integrations: IntegrationCredentials = {},
   crawl?: CrawlData
 ): Promise<AuditContext> {

@@ -3,7 +3,7 @@ import { eq, and, inArray, desc } from 'drizzle-orm'
 import { getDb, sites, audits, auditResults, siteMembers, users } from '@aarfang/db'
 import { authMiddleware } from '../middleware/auth.js'
 import { isPrivileged, canAccessSite } from '../lib/access.js'
-import { generateAiSummary, type AiSummaryInput } from '../lib/ai.js'
+import { generateAiSummary, generateAiRecommendations, type AiSummaryInput, type AiRecommendationsInput } from '../lib/ai.js'
 import { loadOrgIntegrations } from './integrations.js'
 
 const app = new Hono()
@@ -184,6 +184,73 @@ app.post('/:siteId/summary', async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error(`[ai-summary] Error for site ${siteId}:`, message)
+    return c.json({ error: message }, 502)
+  }
+})
+
+// ─── Recommandations stratégiques IA ──────────────────────────────────────────
+
+// POST /api/sites/:siteId/recommendations — génère des recommandations sectorielles via IA
+app.post('/:siteId/recommendations', async (c) => {
+  const orgId = c.get('orgId') as string
+  const userId = c.get('userId') as string
+  const role = c.get('role') as string
+  const { siteId } = c.req.param()
+  const db = getDb()
+
+  if (!await canAccessSite(db, siteId, orgId, userId, role)) {
+    return c.json({ error: 'Site not found' }, 404)
+  }
+
+  const [site] = await db.select().from(sites).where(eq(sites.id, siteId)).limit(1)
+  if (!site) return c.json({ error: 'Site not found' }, 404)
+
+  const orgIntegrations = await loadOrgIntegrations(orgId)
+  const claudeKey = orgIntegrations.claude?.apiKey as string | undefined
+  const openaiKey = orgIntegrations.openai?.apiKey as string | undefined
+
+  if (!claudeKey && !openaiKey) {
+    return c.json({ error: "Aucune intégration IA configurée. Ajoutez une clé Claude ou OpenAI dans Paramètres → Intégrations." }, 503)
+  }
+
+  const [latestAudit] = await db.select().from(audits)
+    .where(and(eq(audits.siteId, siteId), eq(audits.status, 'completed')))
+    .orderBy(desc(audits.completedAt))
+    .limit(1)
+
+  if (!latestAudit?.scores) {
+    return c.json({ error: 'Aucun audit complété disponible pour ce site' }, 422)
+  }
+
+  const results = await db.select().from(auditResults).where(eq(auditResults.auditId, latestAudit.id))
+
+  const input: AiRecommendationsInput = {
+    site: {
+      name: site.name,
+      url: site.url,
+      cmsType: site.cmsType,
+      isEcommerce: site.isEcommerce,
+    },
+    scores: latestAudit.scores,
+    issues: results
+      .filter((r) => r.status !== 'skipped')
+      .map((r) => ({
+        signalId: r.signalId,
+        category: r.category,
+        score: r.score,
+        status: r.status,
+        recommendations: (r.recommendations as string[]) ?? [],
+      }))
+      .sort((a, b) => (a.score ?? 100) - (b.score ?? 100)),
+  }
+
+  try {
+    const recommendations = await generateAiRecommendations(input, claudeKey, openaiKey)
+    await db.update(sites).set({ aiRecommendations: recommendations, aiRecommendationsAt: new Date() }).where(eq(sites.id, siteId))
+    return c.json({ recommendations, generatedAt: new Date().toISOString() })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error(`[ai-recommendations] Error for site ${siteId}:`, message)
     return c.json({ error: message }, 502)
   }
 })

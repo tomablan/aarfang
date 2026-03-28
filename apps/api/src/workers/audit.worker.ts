@@ -1,31 +1,74 @@
 import { eq, and, desc } from 'drizzle-orm'
 import { getDb, audits, auditResults, monitors, sites } from '@aarfang/db'
-import { buildAuditContext, runSignals, computeScores } from '@aarfang/signals'
-import type { IntegrationCredentials, CrawlData } from '@aarfang/signals'
+import { buildAuditContext, runSignals, computeScores, crawlSite } from '@aarfang/signals'
+import type { IntegrationCredentials, CrawlData, CrawlOptions } from '@aarfang/signals'
 import type { InferSelectModel } from 'drizzle-orm'
 import { loadOrgIntegrations } from '../routes/integrations.js'
+import { getValidGscToken } from '../lib/gsc-token.js'
 import { dispatchAlerts } from '../lib/alerts.js'
+import { dispatchWebhooks, auditCompletedPayload, scoreDegradedPayload } from '../lib/webhooks.js'
+import { detectTechStack } from '../lib/tech-stack.js'
 
 type Site = InferSelectModel<typeof sites>
 
-export async function runAudit(auditId: string, site: Site, crawlData?: CrawlData) {
+export async function runAudit(auditId: string, site: Site, crawlData?: CrawlData, crawlOptions?: CrawlOptions) {
   const db = getDb()
 
   await db.update(audits).set({ status: 'running', startedAt: new Date() }).where(eq(audits.id, auditId))
   console.log(`[audit:${auditId}] Starting for ${site.url}`)
 
+  // ── Crawl intégré (optionnel) ──
+  if (crawlOptions && !crawlData) {
+    await db.update(audits).set({ crawlStatus: 'running' }).where(eq(audits.id, auditId))
+    console.log(`[audit:${auditId}] Built-in crawl starting (max=${crawlOptions.maxPages}, delay=${crawlOptions.delayMs}ms)`)
+
+    let lastDbUpdate = Date.now()
+    try {
+      crawlData = await crawlSite(site.url, crawlOptions, async (progress) => {
+        // Mise à jour DB au plus toutes les 5 secondes ou tous les 20 URLs
+        const now = Date.now()
+        if (progress.crawled % 20 === 0 || now - lastDbUpdate > 5000) {
+          lastDbUpdate = now
+          await db.update(audits)
+            .set({ crawlProgress: progress })
+            .where(eq(audits.id, auditId))
+            .catch(() => { /* non bloquant */ })
+        }
+      })
+      await db.update(audits).set({ crawlStatus: 'done', crawlProgress: null }).where(eq(audits.id, auditId))
+      console.log(`[audit:${auditId}] Crawl terminé : ${crawlData.totalUrls} URLs`)
+    } catch (err) {
+      await db.update(audits).set({ crawlStatus: 'error', crawlProgress: null }).where(eq(audits.id, auditId))
+      console.warn(`[audit:${auditId}] Crawl échoué, audit continue sans données crawl :`, err)
+      crawlData = undefined
+    }
+  }
+
   try {
     const rawIntegrations = await loadOrgIntegrations(site.orgId)
+
+    // Rafraîchir le token GSC si nécessaire avant l'audit
+    const gscAccessToken = await getValidGscToken(site.orgId)
+
     const integrations: IntegrationCredentials = {
       pagespeed: rawIntegrations.pagespeed as { apiKey: string } | undefined,
       semrush: rawIntegrations.semrush as { apiKey: string } | undefined,
-      gsc: rawIntegrations.gsc as { accessToken: string } | undefined,
+      gsc: gscAccessToken ? { accessToken: gscAccessToken } : undefined,
       betterstack: rawIntegrations.betterstack as { apiToken: string } | undefined,
       wordpress: rawIntegrations.wordpress as { url: string; applicationPassword: string } | undefined,
       prestashop: rawIntegrations.prestashop as { url: string; apiKey: string } | undefined,
     }
 
     const ctx = await buildAuditContext(site, integrations, crawlData)
+
+    // Détecter et sauvegarder le tech stack (silencieux si erreur)
+    try {
+      const techStack = detectTechStack(ctx.page.headers, ctx.page.html)
+      if (Object.keys(techStack).length > 0) {
+        await db.update(sites).set({ techStack, techStackAt: new Date() }).where(eq(sites.id, site.id))
+      }
+    } catch { /* non bloquant */ }
+
     const results = await runSignals(ctx)
 
     if (results.length > 0) {
@@ -52,6 +95,12 @@ export async function runAudit(auditId: string, site: Site, crawlData?: CrawlDat
     }).where(eq(audits.id, auditId))
 
     console.log(`[audit:${auditId}] Completed. Global score: ${scores.global}`)
+
+    // Webhooks audit.completed
+    await dispatchWebhooks(
+      site.orgId, 'audit.completed', site.id,
+      auditCompletedPayload({ id: site.id, name: site.name, url: site.url }, auditId, scores),
+    ).catch((err) => console.error('[webhooks] audit.completed dispatch error:', err))
 
     // Vérifier la dégradation et déclencher les alertes si nécessaire
     await checkDegradationAndAlert(auditId, site, scores.global, scores)
@@ -100,6 +149,12 @@ async function checkDegradationAndAlert(
   if (drop < monitor.degradationThreshold) return
 
   console.log(`[alerts] Degradation detected for ${site.name}: ${previousScore} → ${newScore} (−${drop})`)
+
+  // Webhooks score.degraded
+  await dispatchWebhooks(
+    site.orgId, 'score.degraded', site.id,
+    scoreDegradedPayload({ id: site.id, name: site.name, url: site.url }, auditId, previousScore, newScore, drop, scores),
+  ).catch((err) => console.error('[webhooks] score.degraded dispatch error:', err))
 
   await dispatchAlerts(monitor, {
     site: { id: site.id, name: site.name, url: site.url },

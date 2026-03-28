@@ -6,6 +6,7 @@ interface PSIResult {
   fid: number | null
   cls: number | null
   ttfb: number | null
+  lcpElement: string | null
 }
 
 async function fetchPSI(url: string, strategy: 'mobile' | 'desktop', apiKey?: string | null): Promise<PSIResult> {
@@ -23,12 +24,17 @@ async function fetchPSI(url: string, strategy: 'mobile' | 'desktop', apiKey?: st
   const cats = data.lighthouseResult?.categories
   const metrics = data.lighthouseResult?.audits
 
+  const lcpItems = metrics?.['largest-contentful-paint-element']?.details?.items ?? []
+  const lcpNode = lcpItems[0]?.node
+  const lcpElement: string | null = lcpNode?.nodeLabel ?? lcpNode?.snippet ?? null
+
   return {
     score: Math.round((cats?.performance?.score ?? 0) * 100),
     lcp: metrics?.['largest-contentful-paint']?.numericValue ?? null,
     fid: metrics?.['total-blocking-time']?.numericValue ?? null,
     cls: metrics?.['cumulative-layout-shift']?.numericValue ?? null,
     ttfb: metrics?.['server-response-time']?.numericValue ?? null,
+    lcpElement,
   }
 }
 
@@ -52,7 +58,10 @@ export const pageSpeed: Signal = {
       const recommendations: string[] = []
 
       if (mobile.score < 50) recommendations.push('Performance mobile critique — optimiser les images, réduire le JavaScript bloquant.')
-      if (mobile.lcp && mobile.lcp > 4000) recommendations.push(`LCP mobile trop élevé (${(mobile.lcp / 1000).toFixed(1)}s). Cible : < 2.5s.`)
+      if (mobile.lcp && mobile.lcp > 4000) {
+        const elementHint = mobile.lcpElement ? ` Élément concerné : ${mobile.lcpElement}.` : ''
+        recommendations.push(`LCP mobile trop élevé (${(mobile.lcp / 1000).toFixed(1)}s).${elementHint} Cible : < 2.5s.`)
+      }
       if (mobile.cls && mobile.cls > 0.25) recommendations.push(`CLS mobile élevé (${mobile.cls.toFixed(3)}). Cible : < 0.1.`)
 
       const summary = `Mobile ${mobile.score}/100 · Desktop ${desktop.score}/100${mobile.lcp ? ` · LCP ${(mobile.lcp / 1000).toFixed(1)}s` : ''}`

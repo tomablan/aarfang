@@ -12,7 +12,8 @@ export const env = {
   SMTP_PASS: process.env.SMTP_PASS ?? '',
   SMTP_FROM: process.env.SMTP_FROM ?? 'alerts@aarfang.io',
   APP_URL: process.env.APP_URL ?? 'http://localhost:5173',
+  // URL publique de l'API — utilisée pour les redirect URI OAuth
+  API_URL: process.env.API_URL ?? 'http://localhost:3001',
   // Origines autorisées pour CORS — séparées par virgule en production
-  // ex: https://app.yourdomain.com,https://www.yourdomain.com
   CORS_ORIGINS: process.env.CORS_ORIGINS ?? '',
 }

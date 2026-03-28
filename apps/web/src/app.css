@@ -1,12 +1,46 @@
 @import "tailwindcss";
 
+/* Dark mode class-based (Tailwind v4) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Variables globales */
 :root {
   --color-good: #22c55e;
   --color-warning: #f59e0b;
   --color-critical: #ef4444;
   --color-skipped: #94a3b8;
+
+  /* Logo harfang — mode clair */
+  --logo-body: #1e293b;
+  --logo-overlay: #334155;
+  --logo-belly-opacity: 0.12;
+  --logo-beak: #cbd5e1;
+}
+
+.dark {
+  /* Logo harfang — mode sombre : corps clair sur fond sombre */
+  --logo-body: #e2e8f0;
+  --logo-overlay: #94a3b8;
+  --logo-belly-opacity: 0.15;
+  --logo-beak: #94a3b8;
 }
 
 .score-good { color: var(--color-good); }
 .score-warning { color: var(--color-warning); }
 .score-critical { color: var(--color-critical); }
+
+/* Clignement des yeux du harfang */
+@keyframes logo-blink {
+  0%, 91%, 100% { transform: scaleY(1); }
+  95%           { transform: scaleY(0.05); }
+}
+
+.logo-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: logo-blink 5s ease-in-out infinite;
+}
+
+@media print {
+  .logo-eye { animation: none; }
+}

@@ -13,6 +13,8 @@ import { auditRoutes } from './routes/audits.js'
 import { integrationsRoutes } from './routes/integrations.js'
 import { monitorsRoutes } from './routes/monitors.js'
 import { orgRoutes } from './routes/org.js'
+import { oauthRoutes } from './routes/oauth.js'
+import { webhooksRoutes } from './routes/webhooks.js'
 import { startAuditWorker } from './lib/queue.js'
 import { env } from './env.js'
 
@@ -33,11 +35,13 @@ app.use('*', cors({
 app.get('/health', (c) => c.json({ ok: true, version: '0.1.0' }))
 
 app.route('/api/auth', authRoutes)
+app.route('/api/oauth', oauthRoutes)
 app.route('/api/sites', sitesRoutes)
 app.route('/api', auditRoutes)
 app.route('/api', monitorsRoutes)
 app.route('/api/integrations', integrationsRoutes)
 app.route('/api/org', orgRoutes)
+app.route('/api/webhooks', webhooksRoutes)
 
 serve({ fetch: app.fetch, port: env.API_PORT, hostname: env.API_HOST, maxRequestBodySize: 20 * 1024 * 1024 /* 20 MB */ }, (info) => {
   console.log(`🚀 API running on http://${info.address}:${info.port}`)

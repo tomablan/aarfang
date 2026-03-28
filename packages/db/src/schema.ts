@@ -26,7 +26,7 @@ export const integrationProviderEnum = pgEnum('integration_provider', [
 export const integrationStatusEnum = pgEnum('integration_status', ['active', 'invalid', 'revoked'])
 export const auditStatusEnum = pgEnum('audit_status', ['pending', 'running', 'completed', 'failed'])
 export const signalCategoryEnum = pgEnum('signal_category', [
-  'technique', 'securite', 'seo_technique', 'seo_local', 'opportunites',
+  'technique', 'securite', 'conformite', 'seo_technique', 'seo_local', 'opportunites', 'sea', 'accessibilite',
 ])
 export const signalStatusEnum = pgEnum('signal_status', ['good', 'warning', 'critical', 'skipped'])
 
@@ -66,6 +66,13 @@ export const sites = pgTable('sites', {
   status: siteStatusEnum('status').notNull().default('active'),
   aiSummary: text('ai_summary'),
   aiSummaryAt: timestamp('ai_summary_at'),
+  aiRecommendations: text('ai_recommendations'),
+  aiRecommendationsAt: timestamp('ai_recommendations_at'),
+  techStack: jsonb('tech_stack').$type<{
+    cms?: string; ecommerce?: string; framework?: string
+    server?: string; cdn?: string; hosting?: string; language?: string
+  }>(),
+  techStackAt: timestamp('tech_stack_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (t) => [
   index('sites_org_idx').on(t.orgId),
@@ -121,11 +128,16 @@ export const audits = pgTable('audits', {
     global: number
     technique: number
     securite: number
+    conformite: number
     seo_technique: number
     seo_local: number
     opportunites: number
+    sea: number
+    accessibilite: number
   }>(),
   errorMessage: text('error_message'),
+  crawlStatus: varchar('crawl_status', { length: 20 }), // null | 'pending' | 'running' | 'done' | 'skipped'
+  crawlProgress: jsonb('crawl_progress').$type<{ crawled: number; discovered: number; currentUrl: string }>(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (t) => [
   index('audits_site_idx').on(t.siteId),
@@ -174,3 +186,21 @@ export const auditsRelations = relations(audits, ({ one, many }) => ({
 export const auditResultsRelations = relations(auditResults, ({ one }) => ({
   audit: one(audits, { fields: [auditResults.auditId], references: [audits.id] }),
 }))
+
+// ─── Webhooks ─────────────────────────────────────────────────────────────────
+
+export const webhooks = pgTable('webhooks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  orgId: uuid('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  url: varchar('url', { length: 2048 }).notNull(),
+  events: jsonb('events').$type<string[]>().notNull().default(['audit.completed']),
+  siteId: uuid('site_id').references(() => sites.id, { onDelete: 'cascade' }),
+  secret: varchar('secret', { length: 64 }),
+  enabled: boolean('enabled').notNull().default(true),
+  lastTriggeredAt: timestamp('last_triggered_at'),
+  lastStatus: integer('last_status'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => [
+  index('webhooks_org_idx').on(t.orgId),
+])

@@ -44,20 +44,26 @@ export const sitesApi = {
     request<{ success: boolean }>(`/api/sites/${id}`, { method: 'DELETE', token }),
   generateSummary: (token: string, id: string) =>
     request<{ summary: string; generatedAt: string }>(`/api/sites/${id}/summary`, { method: 'POST', token }),
+  generateRecommendations: (token: string, id: string) =>
+    request<{ recommendations: string; generatedAt: string }>(`/api/sites/${id}/recommendations`, { method: 'POST', token }),
 }
 
 // Audits
 export const auditsApi = {
-  trigger: (token: string, siteId: string, crawlFile?: File) => {
-    if (crawlFile) {
-      const formData = new FormData()
-      formData.append('crawlFile', crawlFile)
-      return request<{ auditId: string; status: string; crawlUrls?: number }>(
-        `/api/sites/${siteId}/audits`,
-        { method: 'POST', token, body: formData }
-      )
+  trigger: (token: string, siteId: string, opts?: { crawlMode: 'none' | 'auto' | 'file'; crawlFile?: File | null; crawlOptions?: Record<string, unknown> }) => {
+    const formData = new FormData()
+    const mode = opts?.crawlMode ?? 'none'
+    formData.append('crawlMode', mode)
+    if (mode === 'file' && opts?.crawlFile) {
+      formData.append('crawlFile', opts.crawlFile)
     }
-    return request<{ auditId: string; status: string; crawlUrls?: number }>(`/api/sites/${siteId}/audits`, { method: 'POST', token })
+    if (mode === 'auto' && opts?.crawlOptions) {
+      formData.append('crawlOptions', JSON.stringify(opts.crawlOptions))
+    }
+    return request<{ auditId: string; status: string; crawlMode: string; crawlUrls?: number }>(
+      `/api/sites/${siteId}/audits`,
+      { method: 'POST', token, body: formData }
+    )
   },
   get: (token: string, auditId: string) => request<Audit>(`/api/audits/${auditId}`, { token }),
   latest: (token: string, siteId: string) => request<AuditWithResults | null>(`/api/sites/${siteId}/audits/latest`, { token }),
@@ -100,12 +106,14 @@ export const orgApi = {
 
 export interface User { id: string; email: string; firstName: string | null; lastName: string | null; role: string; orgId: string }
 export interface Org { name: string; slug: string; plan: string }
-export interface Site { id: string; orgId: string; url: string; name: string; cmsType: string | null; isEcommerce: boolean; status: string; aiSummary: string | null; aiSummaryAt: string | null; createdAt: string }
+export interface TechStack { cms?: string; ecommerce?: string; framework?: string; server?: string; cdn?: string; hosting?: string; language?: string }
+export interface Site { id: string; orgId: string; url: string; name: string; cmsType: string | null; isEcommerce: boolean; status: string; aiSummary: string | null; aiSummaryAt: string | null; aiRecommendations: string | null; aiRecommendationsAt: string | null; techStack: TechStack | null; techStackAt: string | null; createdAt: string }
 export interface SiteWithAudit extends Site { latestAudit: Audit | null }
-export interface AuditScores { global: number; technique: number; securite: number; seo_technique: number; seo_local: number; opportunites: number }
-export interface Audit { id: string; siteId: string; status: string; scores: AuditScores | null; startedAt: string | null; completedAt: string | null; createdAt: string; errorMessage: string | null }
+export interface AuditScores { global: number; technique: number; securite: number; conformite: number; seo_technique: number; seo_local: number; opportunites: number; sea: number; accessibilite: number }
+export interface CrawlProgress { crawled: number; discovered: number; currentUrl: string }
+export interface Audit { id: string; siteId: string; status: string; scores: AuditScores | null; startedAt: string | null; completedAt: string | null; createdAt: string; errorMessage: string | null; crawlStatus: string | null; crawlProgress: CrawlProgress | null }
 export interface AuditResult { id: string; signalId: string; category: string; score: number | null; status: string; details: Record<string, unknown>; recommendations: string[] }
 export interface AuditWithResults extends Audit { results: AuditResult[] }
-export interface Integration { id: string; orgId: string; siteId: string | null; provider: string; status: string; createdAt: string; lastTestedAt: string | null }
+export interface Integration { id: string; orgId: string; siteId: string | null; provider: string; status: string; createdAt: string; lastTestedAt: string | null; oauthConnected?: boolean }
 export interface OrgMember { id: string; email: string; firstName: string | null; lastName: string | null; role: string; createdAt: string }
 export interface SiteMember { id: string; email: string; firstName: string | null; lastName: string | null; role: string; grantedAt: string }

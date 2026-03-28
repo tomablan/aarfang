@@ -4,13 +4,18 @@ import { ALL_SIGNALS } from './runner.js'
 const CATEGORY_WEIGHTS: Record<SignalCategory, number> = {
   technique: 1.0,
   securite: 1.5,
+  conformite: 1.2,
   seo_technique: 1.0,
   seo_local: 0.8,
   opportunites: 0.7,
+  sea: 0.6,
+  accessibilite: 0.8,
 }
 
 export function computeScores(results: AuditSignalResult[]): AuditScores {
-  const categories: SignalCategory[] = ['technique', 'securite', 'seo_technique', 'seo_local', 'opportunites']
+  const categories: SignalCategory[] = [
+    'technique', 'securite', 'conformite', 'seo_technique', 'seo_local', 'opportunites', 'sea', 'accessibilite',
+  ]
 
   const categoryScores = Object.fromEntries(
     categories.map((cat) => {
@@ -24,7 +29,6 @@ export function computeScores(results: AuditSignalResult[]): AuditScores {
     })
   ) as Record<SignalCategory, number | null>
 
-  // Score global = moyenne pondérée des catégories avec des résultats
   let globalNumerator = 0
   let globalDenominator = 0
   for (const cat of categories) {
@@ -40,8 +44,11 @@ export function computeScores(results: AuditSignalResult[]): AuditScores {
     global,
     technique: categoryScores.technique ?? 0,
     securite: categoryScores.securite ?? 0,
+    conformite: categoryScores.conformite ?? 0,
     seo_technique: categoryScores.seo_technique ?? 0,
     seo_local: categoryScores.seo_local ?? 0,
     opportunites: categoryScores.opportunites ?? 0,
+    sea: categoryScores.sea ?? 0,
+    accessibilite: categoryScores.accessibilite ?? 0,
   }
 }

@@ -113,7 +113,7 @@
 
             {#if audit.scores}
               <div class="flex items-center gap-4">
-                {#each [['Sécu', audit.scores.securite], ['SEO', audit.scores.seo_technique], ['Tech', audit.scores.technique], ['Opport.', audit.scores.opportunites]] as [label, score]}
+                {#each [['Sécu', audit.scores.securite], ['Conf.', audit.scores.conformite], ['SEO', audit.scores.seo_technique], ['Tech', audit.scores.technique], ['Opport.', audit.scores.opportunites]] as [label, score]}
                   <div class="text-center hidden md:block">
                     <p class="text-xs text-slate-400">{label}</p>
                     <p class="text-sm font-semibold {scoreColor(score as number)}">{score}</p>

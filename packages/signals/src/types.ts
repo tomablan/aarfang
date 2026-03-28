@@ -1,9 +1,12 @@
 export type SignalCategory =
   | 'technique'
   | 'securite'
+  | 'conformite'
   | 'seo_technique'
   | 'seo_local'
   | 'opportunites'
+  | 'sea'
+  | 'accessibilite'
 
 export type SignalStatus = 'good' | 'warning' | 'critical' | 'skipped'
 
@@ -19,7 +22,7 @@ export interface FetchedPage {
 export interface IntegrationCredentials {
   pagespeed?: { apiKey: string }
   semrush?: { apiKey: string }
-  gsc?: { accessToken: string }
+  gsc?: { accessToken: string; refreshToken?: string; expiresAt?: number }
   betterstack?: { apiToken: string }
   wordpress?: { url: string; applicationPassword: string }
   prestashop?: { url: string; apiKey: string }
@@ -47,7 +50,7 @@ export interface CrawlRow {
 export interface CrawlData {
   rows: CrawlRow[]
   totalUrls: number
-  source: 'screaming_frog'
+  source: 'screaming_frog' | 'builtin'
 }
 
 export interface AuditContext {
@@ -90,7 +93,10 @@ export interface AuditScores {
   global: number
   technique: number
   securite: number
+  conformite: number
   seo_technique: number
   seo_local: number
   opportunites: number
+  sea: number
+  accessibilite: number
 }

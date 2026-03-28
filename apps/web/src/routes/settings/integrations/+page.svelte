@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { goto } from '$app/navigation'
+  import { goto, afterNavigate } from '$app/navigation'
+  import { page } from '$app/stores'
   import { integrationsApi, type Integration } from '$lib/api.js'
   import { loadStoredToken } from '$lib/stores/auth.svelte.js'
   import { formatDate } from '$lib/utils.js'
@@ -50,10 +51,14 @@
     {
       id: 'gsc',
       name: 'Google Search Console',
-      description: "Impressions, clics, erreurs d'indexation, couverture.",
-      fields: [{ key: 'accessToken', label: 'Access Token OAuth', type: 'password', placeholder: 'Token OAuth 2.0' }],
+      description: "Impressions, clics, erreurs d'indexation, couverture. Connexion via OAuth Google (2 étapes : enregistrer vos identifiants Google OAuth, puis autoriser l'accès).",
+      fields: [
+        { key: 'clientId', label: 'Client ID Google OAuth', type: 'text', placeholder: '123456789-abc.apps.googleusercontent.com' },
+        { key: 'clientSecret', label: 'Client Secret', type: 'password', placeholder: 'GOCSPX-...' },
+      ],
       docsUrl: 'https://developers.google.com/webmaster-tools',
       group: 'seo',
+      oauth: true,
     },
   ]
 
@@ -72,12 +77,30 @@
   let testing = $state<string | null>(null)
   let testResults = $state<Record<string, { ok: boolean; error?: string }>>({})
   let error = $state('')
+  let oauthNotice = $state<{ ok: boolean; message: string } | null>(null)
 
   onMount(async () => {
     token = loadStoredToken() ?? ''
     if (!token) { goto('/login'); return }
+
+    // Retour du flow OAuth Google
+    const gscStatus = $page.url.searchParams.get('gsc')
+    if (gscStatus === 'connected') {
+      oauthNotice = { ok: true, message: 'Google Search Console connecté avec succès.' }
+      goto('/settings/integrations', { replaceState: true })
+    } else if (gscStatus === 'error') {
+      const msg = $page.url.searchParams.get('message') ?? 'Erreur lors de la connexion.'
+      oauthNotice = { ok: false, message: msg }
+      goto('/settings/integrations', { replaceState: true })
+    }
+
     await loadIntegrations()
   })
+
+  function connectGsc() {
+    // Redirection navigateur vers le flow OAuth (le token est passé en query param)
+    window.location.href = `/api/oauth/gsc?token=${encodeURIComponent(token)}`
+  }
 
   async function loadIntegrations() {
     loading = true
@@ -134,6 +157,12 @@
     <p class="text-slate-500 text-sm mt-1">Connectez vos outils tiers. Les clés API sont chiffrées et liées à votre organisation.</p>
   </div>
 
+  {#if oauthNotice}
+    <div class="mb-6 px-4 py-3 rounded-xl text-sm font-medium {oauthNotice.ok ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}">
+      {oauthNotice.message}
+    </div>
+  {/if}
+
   {#if loading}
     <p class="text-slate-500 text-sm">Chargement…</p>
   {:else}
@@ -169,17 +198,38 @@
             </div>
             <div class="flex items-center gap-2 shrink-0">
               {#if existing}
-                <button
-                  onclick={() => testIntegration(existing.id)}
-                  disabled={testing === existing.id}
-                  class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50 transition-colors">
-                  {testing === existing.id ? 'Test…' : 'Tester'}
-                </button>
-                <button
-                  onclick={() => startAdding(provider.id)}
-                  class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-                  Modifier
-                </button>
+                {#if provider.oauth}
+                  {#if existing.oauthConnected}
+                    <button
+                      onclick={() => testIntegration(existing.id)}
+                      disabled={testing === existing.id}
+                      class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50 transition-colors">
+                      {testing === existing.id ? 'Test…' : 'Tester'}
+                    </button>
+                    <button
+                      onclick={() => connectGsc()}
+                      class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+                      Reconnecter
+                    </button>
+                  {/if}
+                  <button
+                    onclick={() => startAdding(provider.id)}
+                    class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+                    Modifier
+                  </button>
+                {:else}
+                  <button
+                    onclick={() => testIntegration(existing.id)}
+                    disabled={testing === existing.id}
+                    class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50 transition-colors">
+                    {testing === existing.id ? 'Test…' : 'Tester'}
+                  </button>
+                  <button
+                    onclick={() => startAdding(provider.id)}
+                    class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+                    Modifier
+                  </button>
+                {/if}
                 <button
                   onclick={() => deleteIntegration(existing.id)}
                   class="text-sm px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors">
@@ -195,9 +245,45 @@
             </div>
           </div>
 
+          <!-- Bannière étape 2 pour GSC : credentials sauvegardés mais OAuth pas encore complété -->
+          {#if provider.oauth && existing && !existing.oauthConnected && adding !== provider.id}
+            <div class="mt-4 pt-4 border-t border-slate-100">
+              <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-center justify-between gap-4">
+                <p class="text-sm text-amber-800">Étape 2 — Autorisez l'accès à votre compte Google Search Console.</p>
+                <button
+                  onclick={() => connectGsc()}
+                  class="shrink-0 text-sm px-3 py-1.5 rounded-lg bg-white border border-amber-300 hover:bg-amber-50 text-amber-900 transition-colors flex items-center gap-1.5">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                  Connecter avec Google
+                </button>
+              </div>
+            </div>
+          {/if}
+
           <!-- Formulaire inline -->
           {#if adding === provider.id}
             <div class="mt-4 pt-4 border-t border-slate-100 space-y-3">
+              {#if provider.id === 'gsc'}
+                {@const redirectUri = (typeof window !== 'undefined' ? window.location.origin : '') + '/api/oauth/gsc/callback'}
+                <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 space-y-2 text-sm">
+                  <p class="font-medium text-blue-900">Configuration requise dans Google Cloud Console</p>
+                  <ol class="text-blue-800 space-y-1 list-decimal list-inside">
+                    <li>Créez un projet sur <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" class="underline">console.cloud.google.com</a></li>
+                    <li>Activez l'API <strong>Google Search Console API</strong></li>
+                    <li>Créez des identifiants <strong>OAuth 2.0 (Application web)</strong></li>
+                    <li>Ajoutez cette URI de redirection autorisée :</li>
+                  </ol>
+                  <div class="flex items-center gap-2 mt-1">
+                    <code class="flex-1 bg-white border border-blue-200 rounded px-2 py-1 text-xs font-mono text-blue-900 break-all">{redirectUri}</code>
+                    <button
+                      onclick={() => navigator.clipboard.writeText(redirectUri)}
+                      class="shrink-0 text-xs px-2 py-1 rounded border border-blue-300 hover:bg-blue-100 text-blue-800 transition-colors">
+                      Copier
+                    </button>
+                  </div>
+                  <p class="text-blue-700 text-xs">Connectez-vous avec le compte Google qui a accès à vos propriétés Search Console.</p>
+                </div>
+              {/if}
               {#each provider.fields as field}
                 <div>
                   <label class="block text-sm font-medium text-slate-700 mb-1">{field.label}</label>

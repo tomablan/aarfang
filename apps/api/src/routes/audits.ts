@@ -4,7 +4,7 @@ import { getDb, sites, audits, auditResults } from '@aarfang/db'
 import { authMiddleware } from '../middleware/auth.js'
 import { canAccessSite } from '../lib/access.js'
 import { runAudit } from '../workers/audit.worker.js'
-import { parseScreamingFrogCsv, type CrawlData } from '@aarfang/signals'
+import { parseScreamingFrogCsv, DEFAULT_CRAWL_OPTIONS, type CrawlData, type CrawlOptions } from '@aarfang/signals'
 
 const app = new Hono()
 app.use('*', authMiddleware)
@@ -23,22 +23,33 @@ app.post('/sites/:siteId/audits', async (c) => {
   const [site] = await db.select().from(sites).where(eq(sites.id, siteId)).limit(1)
   if (!site) return c.json({ error: 'Site not found' }, 404)
 
-  // Lire le CSV Screaming Frog si fourni (multipart ou JSON)
+  // Lire le mode de crawl et les options depuis le body (FormData)
   let crawlData: CrawlData | undefined
-  const contentType = c.req.header('content-type') ?? ''
+  let crawlOptions: CrawlOptions | undefined
+  let crawlMode: 'none' | 'auto' | 'file' = 'none'
 
+  const contentType = c.req.header('content-type') ?? ''
   if (contentType.includes('multipart/form-data')) {
     try {
       const formData = await c.req.formData()
-      const csvFile = formData.get('crawlFile')
-      if (csvFile && typeof csvFile !== 'string') {
-        const text = await (csvFile as File).text()
-        crawlData = parseScreamingFrogCsv(text)
-        console.log(`[audit] Crawl SF chargé : ${crawlData.totalUrls} URLs`)
+      const mode = formData.get('crawlMode')
+      crawlMode = (mode === 'auto' || mode === 'file') ? mode : 'none'
+
+      if (crawlMode === 'file') {
+        const csvFile = formData.get('crawlFile')
+        if (csvFile && typeof csvFile !== 'string') {
+          const text = await (csvFile as File).text()
+          crawlData = parseScreamingFrogCsv(text)
+          console.log(`[audit] Crawl SF chargé : ${crawlData.totalUrls} URLs`)
+        }
+      } else if (crawlMode === 'auto') {
+        const raw = formData.get('crawlOptions')
+        const parsed = raw && typeof raw === 'string' ? JSON.parse(raw) : {}
+        crawlOptions = { ...DEFAULT_CRAWL_OPTIONS, ...parsed }
+        console.log(`[audit] Crawl auto configuré : max=${crawlOptions.maxPages}, delay=${crawlOptions.delayMs}ms`)
       }
     } catch (err) {
-      console.warn('[audit] Erreur parsing CSV SF :', err)
-      // On continue sans crawl plutôt que de bloquer l'audit
+      console.warn('[audit] Erreur parsing FormData :', err)
     }
   }
 
@@ -47,16 +58,17 @@ app.post('/sites/:siteId/audits', async (c) => {
     siteId,
     triggeredBy: userId,
     status: 'pending',
+    crawlStatus: crawlMode === 'auto' ? 'pending' : null,
   }).returning()
 
   // Lancer le runner en arrière-plan (sans bloquer la réponse)
   setImmediate(() => {
-    runAudit(audit.id, site, crawlData).catch((err) => {
+    runAudit(audit.id, site, crawlData, crawlOptions).catch((err) => {
       console.error(`[audit:${audit.id}] Fatal error:`, err)
     })
   })
 
-  return c.json({ auditId: audit.id, status: 'pending', crawlUrls: crawlData?.totalUrls ?? 0 }, 202)
+  return c.json({ auditId: audit.id, status: 'pending', crawlMode, crawlUrls: crawlData?.totalUrls ?? 0 }, 202)
 })
 
 // Historique des audits d'un site

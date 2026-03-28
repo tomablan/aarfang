@@ -1,0 +1,12 @@
+# Caddyfile — SSL automatique via Let's Encrypt
+# {$DOMAIN} est injecté depuis la variable d'environnement DOMAIN
+
+# Frontend
+app.{$DOMAIN} {
+    reverse_proxy web:3000
+}
+
+# API
+api.{$DOMAIN} {
+    reverse_proxy api:3001
+}
