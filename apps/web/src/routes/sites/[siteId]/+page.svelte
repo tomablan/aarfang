@@ -212,7 +212,7 @@
   {#if !audit}
     <div class="text-center py-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-500 dark:text-slate-500">
       <p class="mb-3">Aucun audit disponible.</p>
-      <button onclick={triggerAudit} class="text-slate-700 dark:text-slate-300 underline text-sm">Lancer le premier audit →</button>
+      <button onclick={() => showModal = true} class="text-slate-700 dark:text-slate-300 underline text-sm">Lancer le premier audit →</button>
     </div>
   {:else}
     <!-- Score global + catégories -->
