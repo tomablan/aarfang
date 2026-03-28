@@ -80,7 +80,7 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-}
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health || exit 1"]
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -105,7 +105,7 @@ services:
       ORIGIN: ${APP_URL}
       PORT: 3000
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 15s
       timeout: 5s
       retries: 5
