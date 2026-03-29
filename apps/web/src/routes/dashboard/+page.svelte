@@ -155,7 +155,7 @@
         {#if site.latestAudit?.scores}
           <div class="flex items-end justify-between">
             <div class="flex gap-3">
-              {#each [['Sécu', site.latestAudit.scores.securite], ['SEO', site.latestAudit.scores.seo_technique], ['Opport.', site.latestAudit.scores.opportunites]] as [label, score]}
+              {#each [['Sécu', site.latestAudit.scores.securite], ['SEO', site.latestAudit.scores.seo_technique], ['Éco', site.latestAudit.scores.ecoconception], ['Opport.', site.latestAudit.scores.opportunites]] as [label, score]}
                 <div class="text-center">
                   <p class="text-[10px] text-slate-400 dark:text-slate-500">{label}</p>
                   <p class="font-semibold text-sm {scoreColor(score as number)}">{score}</p>

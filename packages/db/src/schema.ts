@@ -134,6 +134,7 @@ export const audits = pgTable('audits', {
     opportunites: number
     sea: number
     accessibilite: number
+    ecoconception: number
   }>(),
   errorMessage: text('error_message'),
   crawlStatus: varchar('crawl_status', { length: 20 }), // null | 'pending' | 'running' | 'done' | 'skipped'

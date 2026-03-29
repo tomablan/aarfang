@@ -7,6 +7,7 @@ export type SignalCategory =
   | 'opportunites'
   | 'sea'
   | 'accessibilite'
+  | 'ecoconception'
 
 export type SignalStatus = 'good' | 'warning' | 'critical' | 'skipped'
 
@@ -99,4 +100,5 @@ export interface AuditScores {
   opportunites: number
   sea: number
   accessibilite: number
+  ecoconception: number
 }

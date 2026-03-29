@@ -205,6 +205,7 @@
                 { key: 'opportunites', label: 'Navigation' },
                 { key: 'accessibilite', label: 'Accessibilité' },
                 { key: 'sea', label: 'SEA & Tracking' },
+                { key: 'ecoconception', label: 'Éco-conception' },
               ] as cat}
                 {@const val = scores[cat.key as keyof typeof scores] as number | undefined}
                 {@const sl = scoreLabel(val)}

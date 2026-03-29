@@ -10,11 +10,12 @@ const CATEGORY_WEIGHTS: Record<SignalCategory, number> = {
   opportunites: 0.7,
   sea: 0.6,
   accessibilite: 0.8,
+  ecoconception: 1.0,
 }
 
 export function computeScores(results: AuditSignalResult[]): AuditScores {
   const categories: SignalCategory[] = [
-    'technique', 'securite', 'conformite', 'seo_technique', 'seo_local', 'opportunites', 'sea', 'accessibilite',
+    'technique', 'securite', 'conformite', 'seo_technique', 'seo_local', 'opportunites', 'sea', 'accessibilite', 'ecoconception',
   ]
 
   const categoryScores = Object.fromEntries(
@@ -50,5 +51,6 @@ export function computeScores(results: AuditSignalResult[]): AuditScores {
     opportunites: categoryScores.opportunites ?? 0,
     sea: categoryScores.sea ?? 0,
     accessibilite: categoryScores.accessibilite ?? 0,
+    ecoconception: categoryScores.ecoconception ?? 0,
   }
 }

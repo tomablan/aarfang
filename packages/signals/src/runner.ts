@@ -49,6 +49,12 @@ import { blogPresence } from './signals/blog_presence.js'
 import { contentFreshness } from './signals/content_freshness.js'
 import { videoPresence } from './signals/video_presence.js'
 import { pricingPage } from './signals/pricing_page.js'
+import { ecoPageWeight } from './signals/eco_page_weight.js'
+import { ecoCompression } from './signals/eco_compression.js'
+import { ecoCachePolicy } from './signals/eco_cache_policy.js'
+import { ecoImageOptimization } from './signals/eco_image_optimization.js'
+import { ecoThirdPartyScripts } from './signals/eco_third_party_scripts.js'
+import { ecoFonts } from './signals/eco_fonts.js'
 
 // Registre de tous les signaux disponibles
 export const ALL_SIGNALS: Signal[] = [
@@ -110,6 +116,13 @@ export const ALL_SIGNALS: Signal[] = [
   metaPixel,
   seaReadiness,
   landingPageDetection,
+  // Éco-conception
+  ecoPageWeight,
+  ecoCompression,
+  ecoCachePolicy,
+  ecoImageOptimization,
+  ecoThirdPartyScripts,
+  ecoFonts,
 ]
 
 export async function runSignals(ctx: AuditContext): Promise<AuditSignalResult[]> {
