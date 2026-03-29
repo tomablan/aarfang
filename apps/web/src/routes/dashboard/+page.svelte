@@ -8,6 +8,8 @@
   let sites = $state<SiteWithAudit[]>([])
   let loading = $state(true)
   let token = $state('')
+  let sortKey = $state<'name' | 'score' | 'date'>('name')
+  let sortDir = $state<'asc' | 'desc'>('asc')
 
   onMount(async () => {
     token = loadStoredToken() ?? ''
@@ -20,11 +22,48 @@
       loading = false
     }
   })
+
+  const sorted = $derived([...sites].sort((a, b) => {
+    let cmp = 0
+    if (sortKey === 'name') {
+      cmp = a.name.localeCompare(b.name, 'fr')
+    } else if (sortKey === 'score') {
+      const sa = a.latestAudit?.scores?.global ?? -1
+      const sb = b.latestAudit?.scores?.global ?? -1
+      cmp = sa - sb
+    } else {
+      const da = a.latestAudit?.completedAt ? new Date(a.latestAudit.completedAt).getTime() : 0
+      const db_ = b.latestAudit?.completedAt ? new Date(b.latestAudit.completedAt).getTime() : 0
+      cmp = da - db_
+    }
+    return sortDir === 'asc' ? cmp : -cmp
+  }))
+
+  function setSort(key: typeof sortKey) {
+    if (sortKey === key) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc'
+    } else {
+      sortKey = key
+      sortDir = key === 'score' || key === 'date' ? 'desc' : 'asc'
+    }
+  }
 </script>
 
-<div class="flex items-center justify-between mb-8">
+<div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
   <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">Sites</h1>
-  <div class="flex items-center gap-2">
+  <div class="flex items-center gap-2 flex-wrap">
+    {#if sites.length > 1}
+      <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+        {#each ([['name', 'Nom'], ['score', 'Score'], ['date', 'Date']] as const) as [key, label]}
+          <button
+            onclick={() => setSort(key)}
+            class="px-3 py-1 rounded-md text-xs font-medium transition-colors {sortKey === key ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}"
+          >
+            {label}{sortKey === key ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+          </button>
+        {/each}
+      </div>
+    {/if}
     <a href="/sites/import" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-slate-200 dark:border-slate-700">
       Importer CSV
     </a>
@@ -92,7 +131,7 @@
   </div>
 {:else}
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-    {#each sites as site}
+    {#each sorted as site}
       {@const favicon = faviconUrl(site.url)}
       <a href="/sites/{site.id}" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm transition-all flex flex-col gap-3 group">
         <!-- En-tête : favicon + nom -->
