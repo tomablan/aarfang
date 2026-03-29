@@ -20,7 +20,7 @@
 
   // ── Menu utilisateur ───────────────────────────────────────────────────────
   let menuOpen = $state(false)
-  let menuRef: HTMLDivElement
+  let menuRef = $state<HTMLDivElement | undefined>()
 
   function handleDocClick(e: MouseEvent) {
     if (menuOpen && menuRef && !menuRef.contains(e.target as Node)) {

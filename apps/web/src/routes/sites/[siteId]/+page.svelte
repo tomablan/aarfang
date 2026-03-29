@@ -412,9 +412,8 @@
               <h2 class="font-semibold text-slate-800 dark:text-slate-100">{categoryLabel(activeTab)}</h2>
               <span class="text-lg font-bold {scoreColor(catScore)}">{catScore ?? '—'}<span class="text-xs font-normal text-slate-400 dark:text-slate-600">/100</span></span>
             </div>
-            {@const desc = categoryDescription(activeTab)}
-            {#if desc}
-              <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{desc}</p>
+            {#if categoryDescription(activeTab)}
+              <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{categoryDescription(activeTab)}</p>
             {/if}
           </div>
           <div class="divide-y divide-slate-100 dark:divide-slate-800">
