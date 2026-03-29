@@ -256,7 +256,7 @@
     "site": { "id": "...", "name": "Mon site", "url": "https://example.com" },
     "auditId": "...",
     "scores": { "global": 72, "securite": 85, "technique": 70, ... },
-    "reportUrl": "https://app.aarfang.io/sites/..."
+    "reportUrl": "https://app.aarfang.com/sites/..."
   }
 }
 

@@ -10,7 +10,7 @@ export const env = {
   SMTP_PORT: Number(process.env.SMTP_PORT ?? 587),
   SMTP_USER: process.env.SMTP_USER ?? '',
   SMTP_PASS: process.env.SMTP_PASS ?? '',
-  SMTP_FROM: process.env.SMTP_FROM ?? 'alerts@aarfang.io',
+  SMTP_FROM: process.env.SMTP_FROM ?? 'alerts@aarfang.com',
   APP_URL: process.env.APP_URL ?? 'http://localhost:5173',
   // URL publique de l'API — utilisée pour les redirect URI OAuth
   API_URL: process.env.API_URL ?? 'http://localhost:3001',

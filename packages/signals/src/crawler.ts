@@ -21,7 +21,7 @@ export const DEFAULT_CRAWL_OPTIONS: CrawlOptions = {
   respectRobots: true,
 }
 
-const UA = 'aarfang-bot/1.0 (respectful site audit; +https://aarfang.io/bot)'
+const UA = 'aarfang-bot/1.0 (respectful site audit; +https://aarfang.com/bot)'
 
 async function fetchDisallowed(baseUrl: string): Promise<string[]> {
   const disallowed: string[] = []

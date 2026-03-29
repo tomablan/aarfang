@@ -30,7 +30,7 @@ const [user] = await db
   .insert(schema.users)
   .values({
     orgId: org.id,
-    email: 'hello@aarfang.io',
+    email: 'hello@aarfang.com',
     passwordHash,
     firstName: 'Super',
     lastName: 'Admin',
