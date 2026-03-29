@@ -218,43 +218,82 @@
       <button onclick={() => showModal = true} class="text-slate-700 dark:text-slate-300 underline text-sm">Lancer le premier audit →</button>
     </div>
   {:else}
-    <!-- Score global + catégories -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-4 mb-8">
-      <div class="col-span-2 sm:col-span-1 bg-white dark:bg-slate-900 border-2 {scoreBg(audit.scores?.global)} rounded-xl p-4 text-center">
-        <p class="text-xs font-medium text-slate-500 dark:text-slate-500 uppercase tracking-wide mb-1">Score global</p>
-        <p class="text-5xl font-bold {scoreColor(audit.scores?.global)}">{audit.scores?.global ?? '—'}</p>
-        <p class="text-xs text-slate-400 dark:text-slate-600 mt-1">{formatDate(audit.completedAt)}</p>
-      </div>
-      {#each categories as cat}
-        {@const score = audit.scores?.[cat as keyof typeof audit.scores] as number | undefined}
-        <button
-          onclick={() => activeTab = cat}
-          class="bg-white dark:bg-slate-900 border {scoreBg(score)} rounded-xl p-4 text-center hover:opacity-80 transition-opacity {activeTab === cat ? 'ring-2 ring-slate-400 dark:ring-slate-600 ring-offset-1' : ''}"
-        >
-          <p class="text-xs font-medium text-slate-500 dark:text-slate-500 mb-1">{categoryLabel(cat)}</p>
-          <p class="text-3xl font-bold {scoreColor(score)}">{score ?? '—'}</p>
-        </button>
-      {/each}
-    </div>
+    <!-- Vue d'ensemble + navigation -->
+    <div class="flex gap-6 items-start">
 
-    <!-- Onglets de navigation -->
-    {@const tabList = [...categories.filter((c) => resultsByCategory(c).length > 0), 'resume']}
-    <div class="flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-800 mb-4">
-      {#each tabList as tab}
-        <button
-          onclick={() => activeTab = tab}
-          class="shrink-0 px-4 py-2 text-sm font-medium rounded-t-lg transition-colors {activeTab === tab ? 'bg-white dark:bg-slate-900 border border-b-white dark:border-b-slate-900 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 -mb-px' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}"
-        >
-          {#if tab === 'resume'}
+      <!-- Sidebar gauche (desktop) -->
+      <div class="hidden lg:flex flex-col shrink-0 w-52 gap-0.5">
+        <!-- Score global -->
+        <div class="bg-white dark:bg-slate-900 border-2 {scoreBg(audit.scores?.global)} rounded-xl p-4 text-center mb-3">
+          <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Score global</p>
+          <p class="text-5xl font-bold {scoreColor(audit.scores?.global)}">{audit.scores?.global ?? '—'}</p>
+          <p class="text-xs text-slate-400 dark:text-slate-600 mt-1.5">{formatDate(audit.completedAt)}</p>
+        </div>
+
+        <!-- Catégories -->
+        {#each categories as cat}
+          {@const score = audit.scores?.[cat as keyof typeof audit.scores] as number | undefined}
+          {@const hasResults = resultsByCategory(cat).length > 0}
+          <button
+            onclick={() => activeTab = cat}
+            disabled={!hasResults}
+            class="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors
+              {activeTab === cat
+                ? 'bg-slate-800 dark:bg-slate-700 text-white'
+                : hasResults
+                  ? 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  : 'text-slate-300 dark:text-slate-700 cursor-default'}"
+          >
+            <span class="truncate">{categoryLabel(cat)}</span>
+            <span class="ml-2 text-xs font-bold shrink-0 {activeTab === cat ? 'text-white' : scoreColor(score)}">{score ?? '—'}</span>
+          </button>
+        {/each}
+
+        <!-- Résumé IA -->
+        <div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <button
+            onclick={() => activeTab = 'resume'}
+            class="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors
+              {activeTab === 'resume'
+                ? 'bg-slate-800 dark:bg-slate-700 text-white'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}"
+          >
+            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+            </svg>
             Résumé IA
-          {:else}
-            {@const s = audit.scores?.[tab as keyof typeof audit.scores] as number | undefined}
-            <span class={activeTab === tab ? scoreColor(s) : ''}>{categoryLabel(tab)}</span>
-            {#if s !== undefined}<span class="ml-1 text-xs {scoreColor(s)}">{s}</span>{/if}
-          {/if}
-        </button>
-      {/each}
-    </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Contenu principal -->
+      <div class="flex-1 min-w-0">
+
+        <!-- Navigation mobile (horizontal scrollable) -->
+        <div class="lg:hidden mb-4">
+          <!-- Score global mobile -->
+          <div class="flex items-center gap-3 mb-3 bg-white dark:bg-slate-900 border {scoreBg(audit.scores?.global)} rounded-xl px-4 py-3">
+            <span class="text-3xl font-bold {scoreColor(audit.scores?.global)}">{audit.scores?.global ?? '—'}</span>
+            <div>
+              <p class="text-xs font-semibold text-slate-600 dark:text-slate-400">Score global</p>
+              <p class="text-xs text-slate-400 dark:text-slate-600">{formatDate(audit.completedAt)}</p>
+            </div>
+          </div>
+          <!-- Tabs scrollables -->
+          <div class="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {#each [...categories.filter(c => resultsByCategory(c).length > 0), 'resume'] as tab}
+              {@const s = tab !== 'resume' ? audit.scores?.[tab as keyof typeof audit.scores] as number | undefined : undefined}
+              <button
+                onclick={() => activeTab = tab}
+                class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
+                  {activeTab === tab ? 'bg-slate-800 dark:bg-slate-700 text-white' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'}"
+              >
+                {tab === 'resume' ? 'Résumé IA' : categoryLabel(tab)}
+                {#if s !== undefined}<span class="{activeTab === tab ? 'text-white/80' : scoreColor(s)} font-bold">{s}</span>{/if}
+              </button>
+            {/each}
+          </div>
+        </div>
 
     <!-- Contenu de l'onglet actif -->
     {#if activeTab === 'resume'}
@@ -431,6 +470,8 @@
         </div>
       {/if}
     {/if}
+      </div> <!-- fin .flex-1 contenu principal -->
+    </div> <!-- fin .flex sidebar+contenu -->
   {/if}
 {/if}
 
