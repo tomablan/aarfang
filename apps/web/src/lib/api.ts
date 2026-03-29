@@ -106,6 +106,18 @@ export const orgApi = {
     request<{ success: boolean }>(`/api/org/users/${userId}`, { method: 'DELETE', token }),
 }
 
+// Super admin
+export const superadminApi = {
+  listOrgs: (token: string) => request<SuperAdminOrg[]>('/api/superadmin/orgs', { token }),
+  listUsers: (token: string) => request<SuperAdminUser[]>('/api/superadmin/users', { token }),
+  inviteOrg: (token: string, data: { orgName: string; ownerEmail: string; ownerFirstName?: string; ownerLastName?: string; plan?: string }) =>
+    request<{ org: { id: string; name: string; slug: string }; owner: { email: string }; tempPassword: string }>(
+      '/api/superadmin/invite-org', { method: 'POST', token, body: JSON.stringify(data) }
+    ),
+  deleteOrg: (token: string, orgId: string) =>
+    request<{ success: boolean }>(`/api/superadmin/orgs/${orgId}`, { method: 'DELETE', token }),
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface User { id: string; email: string; firstName: string | null; lastName: string | null; role: string; orgId: string }
@@ -121,3 +133,5 @@ export interface AuditWithResults extends Audit { results: AuditResult[] }
 export interface Integration { id: string; orgId: string; siteId: string | null; provider: string; status: string; createdAt: string; lastTestedAt: string | null; oauthConnected?: boolean }
 export interface OrgMember { id: string; email: string; firstName: string | null; lastName: string | null; role: string; createdAt: string }
 export interface SiteMember { id: string; email: string; firstName: string | null; lastName: string | null; role: string; grantedAt: string }
+export interface SuperAdminOrg { id: string; name: string; slug: string; plan: string; createdAt: string; userCount: number; siteCount: number }
+export interface SuperAdminUser { id: string; email: string; firstName: string | null; lastName: string | null; role: string; createdAt: string; orgId: string; orgName: string; orgPlan: string }

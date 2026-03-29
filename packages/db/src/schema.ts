@@ -16,7 +16,7 @@ import { relations } from 'drizzle-orm'
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
 export const planEnum = pgEnum('plan', ['free', 'pro', 'agency'])
-export const userRoleEnum = pgEnum('user_role', ['owner', 'admin', 'member', 'viewer'])
+export const userRoleEnum = pgEnum('user_role', ['super_admin', 'owner', 'admin', 'member', 'viewer'])
 export const cmsTypeEnum = pgEnum('cms_type', ['wordpress', 'prestashop', 'other'])
 export const siteStatusEnum = pgEnum('site_status', ['active', 'paused', 'archived'])
 export const monitorIntervalEnum = pgEnum('monitor_interval', ['daily', 'weekly', 'monthly'])
