@@ -153,7 +153,7 @@
 <div class="max-w-2xl">
   <div class="mb-8">
     <a href="/dashboard" class="text-sm text-slate-500 hover:text-slate-700">← Dashboard</a>
-    <h1 class="text-2xl font-bold text-slate-800 mt-2">Intégrations</h1>
+    <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mt-2">Intégrations</h1>
     <p class="text-slate-500 text-sm mt-1">Connectez vos outils tiers. Les clés API sont chiffrées et liées à votre organisation.</p>
   </div>
 
@@ -178,7 +178,7 @@
           <div class="flex items-start justify-between gap-4">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
-                <h2 class="font-semibold text-slate-800">{provider.name}</h2>
+                <h2 class="font-semibold text-slate-800 dark:text-slate-100">{provider.name}</h2>
                 {#if existing}
                   <span class="text-xs px-2 py-0.5 rounded-full font-medium {existing.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}">
                     {existing.status === 'active' ? 'Connecté' : 'Invalide'}

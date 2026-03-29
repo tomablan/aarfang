@@ -109,7 +109,7 @@
   <!-- En-tête -->
   <div>
     <a href="/dashboard" class="text-sm text-slate-500 hover:text-slate-700">← Dashboard</a>
-    <h1 class="text-2xl font-bold text-slate-800 mt-1">Membres</h1>
+    <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mt-1">Membres</h1>
     <p class="text-sm text-slate-500 mt-0.5">Gérez les accès à votre organisation.</p>
   </div>
 
@@ -135,7 +135,7 @@
 
             <!-- Infos -->
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-slate-800 truncate">
+              <p class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">
                 {displayName(member)}
                 {#if member.id === currentUser?.id}
                   <span class="text-xs text-slate-400 font-normal">(vous)</span>
