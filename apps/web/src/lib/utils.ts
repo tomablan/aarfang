@@ -31,6 +31,7 @@ export function categoryLabel(cat: string): string {
     opportunites: 'Expérience de navigation',
     sea: 'SEA & Tracking',
     accessibilite: 'Accessibilité',
+    ecoconception: 'Éco-conception',
   }
   return labels[cat] ?? cat
 }
