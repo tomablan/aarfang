@@ -42,6 +42,10 @@ export const sitesApi = {
     request<Site>(`/api/sites/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
   delete: (token: string, id: string) =>
     request<{ success: boolean }>(`/api/sites/${id}`, { method: 'DELETE', token }),
+  bulk: (token: string, sites: Array<{ url: string; name: string; cmsType?: string; isEcommerce?: boolean }>) =>
+    request<{ results: Array<{ index: number; status: 'created' | 'error'; site?: { id: string; name: string; url: string }; error?: string }> }>(
+      '/api/sites/bulk', { method: 'POST', token, body: JSON.stringify({ sites }) }
+    ),
   generateSummary: (token: string, id: string) =>
     request<{ summary: string; generatedAt: string }>(`/api/sites/${id}/summary`, { method: 'POST', token }),
   generateRecommendations: (token: string, id: string) =>

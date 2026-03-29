@@ -29,7 +29,10 @@
 <div class="max-w-lg">
   <div class="mb-6">
     <a href="/dashboard" class="text-sm text-slate-500 hover:text-slate-700">← Retour</a>
-    <h1 class="text-2xl font-bold text-slate-800 mt-2">Ajouter un site</h1>
+    <div class="flex items-center justify-between mt-2">
+      <h1 class="text-2xl font-bold text-slate-800">Ajouter un site</h1>
+      <a href="/sites/import" class="text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 underline">Importer plusieurs sites →</a>
+    </div>
   </div>
 
   <form onsubmit={handleSubmit} class="bg-white border border-slate-200 rounded-xl p-6 space-y-4">

@@ -73,6 +73,55 @@ app.post('/', async (c) => {
   return c.json(site, 201)
 })
 
+// Import bulk de sites (owner/admin uniquement)
+app.post('/bulk', async (c) => {
+  const orgId = c.get('orgId') as string
+  const role = c.get('role') as string
+  if (!isPrivileged(role)) return c.json({ error: 'Forbidden — admin or owner required' }, 403)
+
+  const { sites: toImport } = await c.req.json<{
+    sites: Array<{ url: string; name: string; cmsType?: string; isEcommerce?: boolean }>
+  }>()
+
+  if (!Array.isArray(toImport) || toImport.length === 0) {
+    return c.json({ error: 'sites array is required' }, 400)
+  }
+  if (toImport.length > 200) {
+    return c.json({ error: 'Maximum 200 sites per import' }, 400)
+  }
+
+  const db = getDb()
+  const results = await Promise.all(
+    toImport.map(async (item, i) => {
+      if (!item.url || !item.name) {
+        return { index: i, status: 'error', error: 'url and name are required' }
+      }
+      try {
+        let normalizedUrl = item.url.trim()
+        if (!normalizedUrl.startsWith('http')) normalizedUrl = 'https://' + normalizedUrl
+
+        const validCmsTypes = ['wordpress', 'prestashop', 'other']
+        const cmsType = validCmsTypes.includes(item.cmsType ?? '') ? item.cmsType as 'wordpress' | 'prestashop' | 'other' : 'other'
+
+        const [site] = await db.insert(sites).values({
+          orgId,
+          url: normalizedUrl,
+          name: item.name.trim(),
+          cmsType,
+          isEcommerce: item.isEcommerce ?? false,
+        }).returning({ id: sites.id, name: sites.name, url: sites.url })
+
+        return { index: i, status: 'created', site }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        return { index: i, status: 'error', error: message }
+      }
+    })
+  )
+
+  return c.json({ results })
+})
+
 // Détail d'un site
 app.get('/:siteId', async (c) => {
   const orgId = c.get('orgId') as string
