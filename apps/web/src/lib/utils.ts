@@ -88,6 +88,12 @@ export function signalLabel(id: string): string {
     content_freshness: 'Fraîcheur du contenu',
     video_presence: 'Vidéo de présentation',
     pricing_page: 'Page tarifs',
+    eco_page_weight: 'Poids de la page HTML',
+    eco_compression: 'Compression HTTP (Gzip / Brotli)',
+    eco_cache_policy: 'Politique de cache HTTP',
+    eco_image_optimization: 'Optimisation des images (lazy loading, formats modernes)',
+    eco_third_party_scripts: 'Scripts et domaines tiers',
+    eco_fonts: 'Polices web externes',
   }
   return labels[id] ?? id
 }
