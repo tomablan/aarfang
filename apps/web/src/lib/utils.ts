@@ -36,6 +36,21 @@ export function categoryLabel(cat: string): string {
   return labels[cat] ?? cat
 }
 
+export function categoryDescription(cat: string): string {
+  const descriptions: Record<string, string> = {
+    securite: 'La sécurité protège le site et ses visiteurs contre les attaques, les fuites de données et les avertissements navigateur. Un site non sécurisé pénalise le référencement et détruit la confiance des utilisateurs.',
+    conformite: 'La conformité légale est obligatoire : mentions légales, politique de confidentialité, gestion des cookies. Un manquement expose à des sanctions RGPD et fragilise la crédibilité de l\'entreprise.',
+    accessibilite: 'L\'accessibilité garantit que le site est utilisable par tous, y compris les personnes en situation de handicap. Elle améliore l\'expérience globale, élargit l\'audience et réduit les risques juridiques.',
+    technique: 'La performance technique conditionne directement l\'expérience utilisateur et le référencement. Un site lent perd des visiteurs et est pénalisé par Google, qui intègre les Core Web Vitals dans son algorithme.',
+    seo_technique: 'Le SEO technique assure que Google peut découvrir, explorer et indexer le site correctement. Sans ces fondations, même un contenu de qualité reste invisible dans les résultats de recherche.',
+    seo_local: 'Le SEO local maximise la visibilité dans les recherches géolocalisées (Google Maps, "près de moi"). Indispensable pour les entreprises ayant une présence physique ou une zone de chalandise définie.',
+    opportunites: 'L\'expérience de navigation évalue la capacité du site à convertir les visiteurs en contacts ou clients : clarté des appels à l\'action, facilité de contact, éléments de réassurance.',
+    sea: 'La maturité SEA mesure la préparation du site pour les campagnes publicitaires payantes. Un tracking mal configuré gaspille le budget publicitaire et empêche d\'optimiser les conversions.',
+    ecoconception: 'L\'éco-conception réduit l\'empreinte environnementale du site (énergie, bande passante, requêtes réseau). Elle améliore aussi la performance perçue et réduit les coûts d\'infrastructure.',
+  }
+  return descriptions[cat] ?? ''
+}
+
 export function signalLabel(id: string): string {
   const labels: Record<string, string> = {
     https_enabled: 'HTTPS activé',

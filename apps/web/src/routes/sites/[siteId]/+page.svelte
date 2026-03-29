@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation'
   import { sitesApi, auditsApi, type Site, type AuditWithResults, type AuditResult, type Audit } from '$lib/api.js'
   import { loadStoredToken } from '$lib/stores/auth.svelte.js'
-  import { scoreColor, scoreBg, statusColor, categoryLabel, signalLabel, formatDate, faviconUrl } from '$lib/utils.js'
+  import { scoreColor, scoreBg, statusColor, categoryLabel, categoryDescription, signalLabel, formatDate, faviconUrl } from '$lib/utils.js'
   import { marked } from 'marked'
   import Sparkline from '$lib/components/Sparkline.svelte'
   import AuditModal from '$lib/components/AuditModal.svelte'
@@ -407,9 +407,15 @@
       {@const catScore = audit.scores?.[activeTab as keyof typeof audit.scores] as number | undefined}
       {#if results.length > 0}
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-          <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-            <h2 class="font-semibold text-slate-700 dark:text-slate-300">{categoryLabel(activeTab)}</h2>
-            <span class="text-sm font-bold {scoreColor(catScore)}">{catScore ?? '—'}/100</span>
+          <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+            <div class="flex items-center justify-between mb-1">
+              <h2 class="font-semibold text-slate-800 dark:text-slate-100">{categoryLabel(activeTab)}</h2>
+              <span class="text-lg font-bold {scoreColor(catScore)}">{catScore ?? '—'}<span class="text-xs font-normal text-slate-400 dark:text-slate-600">/100</span></span>
+            </div>
+            {@const desc = categoryDescription(activeTab)}
+            {#if desc}
+              <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{desc}</p>
+            {/if}
           </div>
           <div class="divide-y divide-slate-100 dark:divide-slate-800">
             {#each results as result}
