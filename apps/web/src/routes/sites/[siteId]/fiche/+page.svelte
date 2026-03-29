@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation'
   import { sitesApi, auditsApi, type Site, type Audit, type TechStack } from '$lib/api.js'
   import { loadStoredToken } from '$lib/stores/auth.svelte.js'
-  import { scoreColor, scoreBg, formatDate } from '$lib/utils.js'
+  import { scoreColor, scoreBg, formatDate, faviconUrl } from '$lib/utils.js'
 
   const siteId = $derived($page.params.siteId)
 
@@ -71,7 +71,12 @@
   <div class="flex items-center gap-2 mb-6 text-sm text-slate-500">
     <a href="/dashboard" class="hover:text-slate-700 dark:hover:text-slate-300">Sites</a>
     <span class="text-slate-300 dark:text-slate-700">/</span>
-    <a href="/sites/{siteId}" class="hover:text-slate-700 dark:hover:text-slate-300">{site.name}</a>
+    <a href="/sites/{siteId}" class="hover:text-slate-700 dark:hover:text-slate-300 flex items-center gap-1.5">
+      {#if faviconUrl(site.url)}
+        <img src={faviconUrl(site.url)} alt="" width="14" height="14" class="rounded" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
+      {/if}
+      {site.name}
+    </a>
     <span class="text-slate-300 dark:text-slate-700">/</span>
     <span class="text-slate-700 dark:text-slate-300">Fiche technique</span>
   </div>

@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation'
   import { sitesApi, auditsApi, type Site, type AuditWithResults, type AuditResult, type Audit } from '$lib/api.js'
   import { loadStoredToken } from '$lib/stores/auth.svelte.js'
-  import { scoreColor, scoreBg, statusColor, categoryLabel, signalLabel, formatDate } from '$lib/utils.js'
+  import { scoreColor, scoreBg, statusColor, categoryLabel, signalLabel, formatDate, faviconUrl } from '$lib/utils.js'
   import { marked } from 'marked'
   import Sparkline from '$lib/components/Sparkline.svelte'
   import AuditModal from '$lib/components/AuditModal.svelte'
@@ -169,6 +169,9 @@
     <div class="flex-1 min-w-0">
       <a href="/dashboard" class="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300">← Sites</a>
       <div class="flex items-center gap-4 mt-1 flex-wrap">
+        {#if faviconUrl(site.url)}
+          <img src={faviconUrl(site.url)} alt="" width="24" height="24" class="rounded shrink-0" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
+        {/if}
         <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">{site.name}</h1>
         {#if sparkScores.length >= 2}
           <div class="flex items-center gap-2">

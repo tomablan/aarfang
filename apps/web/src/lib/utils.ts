@@ -91,6 +91,15 @@ export function signalLabel(id: string): string {
   return labels[id] ?? id
 }
 
+export function faviconUrl(siteUrl: string): string {
+  try {
+    const host = new URL(siteUrl).hostname
+    return `https://www.google.com/s2/favicons?sz=64&domain=${host}`
+  } catch {
+    return ''
+  }
+}
+
 export function formatDate(iso: string | null): string {
   if (!iso) return '—'
   return new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(iso))

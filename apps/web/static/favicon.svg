@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 44" fill="none">
+  <!-- Oreilles -->
+  <path d="M13 13 L10 3 L17 10 Z" fill="#1e293b"/>
+  <path d="M27 13 L30 3 L23 10 Z" fill="#1e293b"/>
+  <!-- Corps -->
+  <ellipse cx="20" cy="26" rx="16" ry="15" fill="#1e293b"/>
+  <!-- Ventre -->
+  <ellipse cx="20" cy="31" rx="9" ry="8" fill="#f1f5f9" opacity="0.15"/>
+  <!-- Masque facial -->
+  <ellipse cx="20" cy="24" rx="12" ry="11" fill="#334155" opacity="0.6"/>
+  <!-- Oeil gauche -->
+  <circle cx="13.5" cy="23" r="5.5" fill="white"/>
+  <circle cx="13.5" cy="23" r="3.8" fill="#f59e0b"/>
+  <circle cx="13.5" cy="23" r="2.1" fill="#0f172a"/>
+  <circle cx="14.7" cy="21.8" r="0.85" fill="white"/>
+  <!-- Oeil droit -->
+  <circle cx="26.5" cy="23" r="5.5" fill="white"/>
+  <circle cx="26.5" cy="23" r="3.8" fill="#f59e0b"/>
+  <circle cx="26.5" cy="23" r="2.1" fill="#0f172a"/>
+  <circle cx="27.7" cy="21.8" r="0.85" fill="white"/>
+  <!-- Bec -->
+  <path d="M18 27 Q20 30 22 27 Q20 25.5 18 27Z" fill="#cbd5e1"/>
+</svg>

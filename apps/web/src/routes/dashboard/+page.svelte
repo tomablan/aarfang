@@ -3,7 +3,7 @@
   import { goto } from '$app/navigation'
   import { sitesApi, type SiteWithAudit } from '$lib/api.js'
   import { loadStoredToken } from '$lib/stores/auth.svelte.js'
-  import { scoreColor, formatDate } from '$lib/utils.js'
+  import { scoreColor, faviconUrl, formatDate } from '$lib/utils.js'
 
   let sites = $state<SiteWithAudit[]>([])
   let loading = $state(true)
@@ -86,36 +86,56 @@
     </div>
   </div>
 {:else}
-  <div class="grid gap-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
     {#each sites as site}
-      <a href="/sites/{site.id}" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm transition-all flex items-center justify-between group">
-        <div>
-          <p class="font-semibold text-slate-800 dark:text-slate-100 group-hover:text-slate-900 dark:group-hover:text-white">{site.name}</p>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{site.url}</p>
-          {#if site.latestAudit?.completedAt}
-            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Dernier audit : {formatDate(site.latestAudit.completedAt)}</p>
-          {:else}
-            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Aucun audit effectué</p>
+      {@const favicon = faviconUrl(site.url)}
+      <a href="/sites/{site.id}" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm transition-all flex flex-col gap-3 group">
+        <!-- En-tête : favicon + nom -->
+        <div class="flex items-center gap-2.5 min-w-0">
+          {#if favicon}
+            <img
+              src={favicon}
+              alt=""
+              width="20" height="20"
+              class="rounded shrink-0 opacity-90"
+              onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')}
+            />
           {/if}
+          <div class="min-w-0">
+            <p class="font-semibold text-slate-800 dark:text-slate-100 group-hover:text-slate-900 dark:group-hover:text-white truncate text-sm">{site.name}</p>
+            <p class="text-xs text-slate-400 dark:text-slate-500 truncate">{new URL(site.url).hostname}</p>
+          </div>
         </div>
 
+        <!-- Score global -->
         {#if site.latestAudit?.scores}
-          <div class="flex items-center gap-6">
-            {#each [['Technique', site.latestAudit.scores.technique], ['Sécu', site.latestAudit.scores.securite], ['SEO', site.latestAudit.scores.seo_technique], ['Opport.', site.latestAudit.scores.opportunites]] as [label, score]}
-              <div class="text-center hidden sm:block">
-                <p class="text-xs text-slate-400 dark:text-slate-500">{label}</p>
-                <p class="font-bold text-lg {scoreColor(score as number)}">{score}</p>
-              </div>
-            {/each}
-            <div class="text-center ml-2 pl-4 border-l border-slate-200 dark:border-slate-700">
-              <p class="text-xs text-slate-400 dark:text-slate-500">Global</p>
-              <p class="font-bold text-2xl {scoreColor(site.latestAudit.scores.global)}">{site.latestAudit.scores.global}</p>
+          <div class="flex items-end justify-between">
+            <div class="flex gap-3">
+              {#each [['Sécu', site.latestAudit.scores.securite], ['SEO', site.latestAudit.scores.seo_technique], ['Opport.', site.latestAudit.scores.opportunites]] as [label, score]}
+                <div class="text-center">
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500">{label}</p>
+                  <p class="font-semibold text-sm {scoreColor(score as number)}">{score}</p>
+                </div>
+              {/each}
+            </div>
+            <div class="text-right">
+              <p class="text-[10px] text-slate-400 dark:text-slate-500">Global</p>
+              <p class="font-bold text-2xl leading-none {scoreColor(site.latestAudit.scores.global)}">{site.latestAudit.scores.global}</p>
             </div>
           </div>
+          <p class="text-[10px] text-slate-400 dark:text-slate-500">{formatDate(site.latestAudit.completedAt)}</p>
         {:else}
-          <span class="text-slate-400 dark:text-slate-500 text-sm">—</span>
+          <p class="text-xs text-slate-400 dark:text-slate-500 mt-auto">Aucun audit effectué</p>
         {/if}
       </a>
     {/each}
+
+    <!-- Carte ajout rapide -->
+    <a href="/sites/new" class="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-500 min-h-[120px]">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+      </svg>
+      <span class="text-xs font-medium">Ajouter un site</span>
+    </a>
   </div>
 {/if}
