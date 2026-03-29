@@ -159,6 +159,7 @@
           <p class="text-xs text-slate-500">Déclenche un audit automatiquement selon la fréquence choisie</p>
         </div>
         <button
+          aria-label={monitor.enabled ? 'Désactiver la surveillance' : 'Activer la surveillance'}
           onclick={() => monitor.enabled = !monitor.enabled}
           class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors {monitor.enabled ? 'bg-slate-800' : 'bg-slate-300'}">
           <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {monitor.enabled ? 'translate-x-6' : 'translate-x-1'}"></span>
@@ -166,7 +167,7 @@
       </label>
 
       <div class:opacity-40={!monitor.enabled}>
-        <label class="block text-sm font-medium text-slate-700 mb-2">Fréquence</label>
+        <p class="block text-sm font-medium text-slate-700 mb-2">Fréquence</p>
         <div class="flex gap-2">
           {#each [['daily', 'Quotidien'], ['weekly', 'Hebdomadaire'], ['monthly', 'Mensuel']] as [val, label]}
             <button
@@ -204,8 +205,8 @@
       {#if monitor.alertOnDegradation}
         <div class:opacity-40={!monitor.alertOnDegradation} class="space-y-4">
           <div class="flex items-center gap-3">
-            <label class="text-sm text-slate-600 whitespace-nowrap">Seuil de dégradation :</label>
-            <input type="number" min="1" max="50" bind:value={monitor.degradationThreshold}
+            <label for="degradation-threshold" class="text-sm text-slate-600 whitespace-nowrap">Seuil de dégradation :</label>
+            <input id="degradation-threshold" type="number" min="1" max="50" bind:value={monitor.degradationThreshold}
               class="w-16 border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-slate-400" />
             <span class="text-sm text-slate-500">points de baisse</span>
           </div>
@@ -318,10 +319,11 @@
       </p>
 
       <div>
-        <label class="block text-sm text-slate-600 mb-1">
+        <label for="delete-confirm" class="block text-sm text-slate-600 mb-1">
           Tapez <span class="font-mono font-bold text-slate-800">{siteName}</span> pour confirmer
         </label>
         <input
+          id="delete-confirm"
           type="text"
           bind:value={deleteConfirm}
           placeholder={siteName}

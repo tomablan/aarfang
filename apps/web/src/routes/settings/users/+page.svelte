@@ -203,26 +203,26 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Prénom</label>
-            <input bind:value={inviteFirstName} type="text" placeholder="Jean"
+            <label for="invite-firstname" class="block text-xs font-medium text-slate-600 mb-1">Prénom</label>
+            <input id="invite-firstname" bind:value={inviteFirstName} type="text" placeholder="Jean"
               class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-slate-400" />
           </div>
           <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Nom</label>
-            <input bind:value={inviteLastName} type="text" placeholder="Dupont"
+            <label for="invite-lastname" class="block text-xs font-medium text-slate-600 mb-1">Nom</label>
+            <input id="invite-lastname" bind:value={inviteLastName} type="text" placeholder="Dupont"
               class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-slate-400" />
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Email <span class="text-red-500">*</span></label>
-          <input bind:value={inviteEmail} type="email" placeholder="jean@exemple.fr"
+          <label for="invite-email" class="block text-xs font-medium text-slate-600 mb-1">Email <span class="text-red-500">*</span></label>
+          <input id="invite-email" bind:value={inviteEmail} type="email" placeholder="jean@exemple.fr"
             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-slate-400" />
         </div>
 
         <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Rôle</label>
-          <select bind:value={inviteRole}
+          <label for="invite-role" class="block text-xs font-medium text-slate-600 mb-1">Rôle</label>
+          <select id="invite-role" bind:value={inviteRole}
             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-slate-400">
             {#each assignableRoles as r}
               <option value={r}>{ROLE_LABELS[r]}</option>

@@ -286,8 +286,9 @@
               {/if}
               {#each provider.fields as field}
                 <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">{field.label}</label>
+                  <label for="integration-{field.key}" class="block text-sm font-medium text-slate-700 mb-1">{field.label}</label>
                   <input
+                    id="integration-{field.key}"
                     type={field.type}
                     placeholder={field.placeholder}
                     bind:value={formValues[field.key]}

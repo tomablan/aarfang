@@ -140,12 +140,12 @@
     <h2 class="font-semibold text-slate-700 dark:text-slate-300 mb-4">Nouveau webhook</h2>
     <div class="grid grid-cols-2 gap-4 mb-4">
       <div>
-        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nom</label>
-        <input bind:value={formName} placeholder="Slack audit alerts" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 dark:bg-slate-800 dark:text-slate-100" />
+        <label for="webhook-name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nom</label>
+        <input id="webhook-name" bind:value={formName} placeholder="Slack audit alerts" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 dark:bg-slate-800 dark:text-slate-100" />
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">URL de destination</label>
-        <input bind:value={formUrl} placeholder="https://hooks.slack.com/…" type="url" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 dark:bg-slate-800 dark:text-slate-100" />
+        <label for="webhook-url" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">URL de destination</label>
+        <input id="webhook-url" bind:value={formUrl} placeholder="https://hooks.slack.com/…" type="url" class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 dark:bg-slate-800 dark:text-slate-100" />
       </div>
     </div>
 

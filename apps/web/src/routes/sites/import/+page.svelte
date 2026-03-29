@@ -276,8 +276,12 @@ Site vitrine,https://vitrine.fr,,</pre>
                       onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
                   {/if}
                   <div class="min-w-0">
-                    <p class="font-medium text-slate-800 dark:text-slate-200 truncate">{row.name || <span class="text-red-400 italic">nom manquant</span>}</p>
-                    <p class="text-xs text-slate-400 dark:text-slate-500 truncate">{row.url || <span class="text-red-400 italic">URL manquante</span>}</p>
+                    <p class="font-medium text-slate-800 dark:text-slate-200 truncate">
+                      {#if row.name}{row.name}{:else}<span class="text-red-400 italic">nom manquant</span>{/if}
+                    </p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 truncate">
+                      {#if row.url}{row.url}{:else}<span class="text-red-400 italic">URL manquante</span>{/if}
+                    </p>
                   </div>
                 </div>
               </td>
