@@ -15,7 +15,7 @@ if echo "$DB_PASS" | grep -qE '[/+=]'; then
 fi
 
 echo "📦 Pull du code..."
-git pull origin main
+git pull origin master
 
 echo "🔨 Build et redémarrage des conteneurs..."
 $COMPOSE up -d --build --remove-orphans
