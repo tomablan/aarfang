@@ -111,7 +111,7 @@ export const superadminApi = {
   listOrgs: (token: string) => request<SuperAdminOrg[]>('/api/superadmin/orgs', { token }),
   listUsers: (token: string) => request<SuperAdminUser[]>('/api/superadmin/users', { token }),
   inviteOrg: (token: string, data: { orgName: string; ownerEmail: string; ownerFirstName?: string; ownerLastName?: string; plan?: string }) =>
-    request<{ org: { id: string; name: string; slug: string }; owner: { email: string }; tempPassword: string }>(
+    request<{ org: { id: string; name: string; slug: string }; owner: { email: string }; tempPassword: string; emailSent: boolean }>(
       '/api/superadmin/invite-org', { method: 'POST', token, body: JSON.stringify(data) }
     ),
   deleteOrg: (token: string, orgId: string) =>

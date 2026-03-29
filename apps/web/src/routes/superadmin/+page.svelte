@@ -19,7 +19,7 @@
   let inviteLastName = $state('')
   let invitePlan = $state('free')
   let inviting = $state(false)
-  let inviteResult = $state<{ orgName: string; email: string; tempPassword: string } | null>(null)
+  let inviteResult = $state<{ orgName: string; email: string; tempPassword: string; emailSent: boolean } | null>(null)
   let inviteError = $state('')
 
   // Confirm delete
@@ -61,7 +61,7 @@
         ownerLastName: inviteLastName || undefined,
         plan: invitePlan,
       })
-      inviteResult = { orgName: res.org.name, email: res.owner.email, tempPassword: res.tempPassword }
+      inviteResult = { orgName: res.org.name, email: res.owner.email, tempPassword: res.tempPassword, emailSent: res.emailSent }
       inviteOrgName = ''; inviteEmail = ''; inviteFirstName = ''; inviteLastName = ''; invitePlan = 'free'
       await loadAll()
     } catch (err: any) {
@@ -127,7 +127,11 @@
           <p class="text-sm text-green-700 dark:text-green-400">Mot de passe temporaire :</p>
           <code class="bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 px-2 py-0.5 rounded font-mono text-sm">{inviteResult.tempPassword}</code>
         </div>
-        <p class="text-xs text-green-600 dark:text-green-500">Transmettez ce mot de passe à l'utilisateur — il ne sera plus affiché.</p>
+        {#if inviteResult.emailSent}
+          <p class="text-xs text-green-600 dark:text-green-500">Email envoyé à {inviteResult.email} avec les identifiants.</p>
+        {:else}
+          <p class="text-xs text-amber-600 dark:text-amber-400">SMTP non configuré — transmettez ce mot de passe manuellement, il ne sera plus affiché.</p>
+        {/if}
       </div>
     {/if}
 

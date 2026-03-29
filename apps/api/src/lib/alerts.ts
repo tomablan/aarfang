@@ -109,6 +109,80 @@ export async function sendEmailAlert(to: string, payload: AlertPayload): Promise
   console.log(`[alerts] Email sent to ${to}`)
 }
 
+// ─── Invitation organisation ─────────────────────────────────────────────────
+
+export async function sendOrgInviteEmail(to: string, payload: {
+  orgName: string
+  tempPassword: string
+}): Promise<void> {
+  if (!env.SMTP_HOST) {
+    console.warn('[alerts] SMTP not configured — invite email skipped')
+    return
+  }
+
+  const loginUrl = `${env.APP_URL}/login`
+
+  const html = `
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>Votre accès aarfang</title></head>
+<body style="font-family:system-ui,sans-serif;background:#f8fafc;padding:32px;margin:0">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden">
+    <div style="background:#1e293b;padding:20px 24px">
+      <p style="color:#fff;font-size:18px;font-weight:700;margin:0">aarfang</p>
+      <p style="color:#94a3b8;font-size:13px;margin:4px 0 0">Plateforme d'audit qualité web</p>
+    </div>
+    <div style="padding:28px 24px">
+      <p style="font-size:15px;color:#334155;margin-bottom:8px">Bonjour,</p>
+      <p style="font-size:15px;color:#334155;margin-bottom:20px">
+        Votre organisation <strong>${payload.orgName}</strong> a été créée sur aarfang.
+        Voici vos identifiants pour vous connecter.
+      </p>
+
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px 20px;margin-bottom:24px">
+        <div style="margin-bottom:10px">
+          <span style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em">Email</span><br>
+          <span style="font-size:14px;color:#1e293b;font-weight:600">${to}</span>
+        </div>
+        <div>
+          <span style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em">Mot de passe temporaire</span><br>
+          <span style="font-size:16px;color:#1e293b;font-weight:700;font-family:monospace;letter-spacing:.1em">${payload.tempPassword}</span>
+        </div>
+      </div>
+
+      <p style="font-size:13px;color:#64748b;margin-bottom:20px">
+        Changez ce mot de passe dès votre première connexion.
+      </p>
+
+      <a href="${loginUrl}" style="display:inline-block;background:#1e293b;color:#fff;text-decoration:none;padding:11px 24px;border-radius:8px;font-size:13px;font-weight:600">
+        Se connecter →
+      </a>
+
+      <p style="font-size:11px;color:#94a3b8;margin-top:24px">
+        ${loginUrl}
+      </p>
+    </div>
+  </div>
+</body>
+</html>`
+
+  const transporter = nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_PORT === 465,
+    auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
+  })
+
+  await transporter.sendMail({
+    from: env.SMTP_FROM,
+    to,
+    subject: `Votre accès aarfang — ${payload.orgName}`,
+    html,
+  })
+
+  console.log(`[alerts] Invite email sent to ${to}`)
+}
+
 // ─── Dispatcher ───────────────────────────────────────────────────────────────
 
 export async function dispatchAlerts(

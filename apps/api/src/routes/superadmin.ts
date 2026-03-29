@@ -4,6 +4,7 @@ import { eq, desc, sql } from 'drizzle-orm'
 import { getDb, users, organizations, sites, audits } from '@aarfang/db'
 import { authMiddleware } from '../middleware/auth.js'
 import { isSuperAdmin } from '../lib/access.js'
+import { sendOrgInviteEmail } from '../lib/alerts.js'
 
 const app = new Hono()
 app.use('*', authMiddleware)
@@ -125,7 +126,16 @@ app.post('/invite-org', async (c) => {
     role: users.role,
   })
 
-  return c.json({ org, owner, tempPassword }, 201)
+  // Envoyer l'email d'invitation (silencieux si SMTP non configuré)
+  let emailSent = false
+  try {
+    await sendOrgInviteEmail(owner.email, { orgName: org.name, tempPassword })
+    emailSent = true
+  } catch (err) {
+    console.error('[superadmin] Failed to send invite email:', err instanceof Error ? err.message : err)
+  }
+
+  return c.json({ org, owner, tempPassword, emailSent }, 201)
 })
 
 // DELETE /api/superadmin/orgs/:orgId — supprimer une organisation
