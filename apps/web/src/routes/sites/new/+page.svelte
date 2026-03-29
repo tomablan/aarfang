@@ -28,28 +28,28 @@
 
 <div class="max-w-lg">
   <div class="mb-6">
-    <a href="/dashboard" class="text-sm text-slate-500 hover:text-slate-700">← Retour</a>
+    <a href="/dashboard" class="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">← Retour</a>
     <div class="flex items-center justify-between mt-2">
-      <h1 class="text-2xl font-bold text-slate-800">Ajouter un site</h1>
-      <a href="/sites/import" class="text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 underline">Importer plusieurs sites →</a>
+      <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">Ajouter un site</h1>
+      <a href="/sites/import" class="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 underline">Importer plusieurs sites →</a>
     </div>
   </div>
 
-  <form onsubmit={handleSubmit} class="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+  <form onsubmit={handleSubmit} class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 space-y-4">
     <div>
-      <label class="block text-sm font-medium text-slate-700 mb-1" for="name">Nom du site</label>
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="name">Nom du site</label>
       <input id="name" type="text" bind:value={name} required placeholder="Mon client - Site vitrine"
-        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
+        class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400" />
     </div>
     <div>
-      <label class="block text-sm font-medium text-slate-700 mb-1" for="url">URL</label>
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="url">URL</label>
       <input id="url" type="text" bind:value={url} required placeholder="https://example.com"
-        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
+        class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400" />
     </div>
     <div>
-      <label class="block text-sm font-medium text-slate-700 mb-1" for="cms">CMS</label>
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="cms">CMS</label>
       <select id="cms" bind:value={cmsType}
-        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400">
+        class="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400">
         <option value="other">Autre / Inconnu</option>
         <option value="wordpress">WordPress</option>
         <option value="prestashop">PrestaShop</option>
@@ -57,15 +57,15 @@
     </div>
 
     {#if error}
-      <p class="text-red-600 text-sm">{error}</p>
+      <p class="text-red-600 dark:text-red-400 text-sm">{error}</p>
     {/if}
 
     <div class="flex gap-3 pt-2">
       <button type="submit" disabled={loading}
-        class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-700 disabled:opacity-50 transition-colors">
+        class="bg-slate-800 dark:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-700 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors">
         {loading ? 'Création…' : 'Créer le site'}
       </button>
-      <a href="/dashboard" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+      <a href="/dashboard" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
         Annuler
       </a>
     </div>

@@ -138,6 +138,60 @@ app.post('/invite-org', async (c) => {
   return c.json({ org, owner, tempPassword, emailSent }, 201)
 })
 
+// POST /api/superadmin/test-email — envoyer un email de test
+app.post('/test-email', async (c) => {
+  const { to } = await c.req.json<{ to: string }>()
+  if (!to) return c.json({ error: 'to is required' }, 400)
+
+  const { env } = await import('../env.js')
+  if (!env.SMTP_HOST) return c.json({ error: 'SMTP not configured (SMTP_HOST is empty)' }, 422)
+
+  try {
+    const nodemailer = (await import('nodemailer')).default
+    const transporter = nodemailer.createTransport({
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      secure: env.SMTP_PORT === 465,
+      auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
+    })
+    await transporter.sendMail({
+      from: env.SMTP_FROM,
+      to,
+      subject: '✅ Test email — aarfang',
+      html: `
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>Test email aarfang</title></head>
+<body style="font-family:system-ui,sans-serif;background:#f8fafc;padding:32px;margin:0">
+  <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden">
+    <div style="background:#1e293b;padding:20px 24px">
+      <p style="color:#fff;font-size:18px;font-weight:700;margin:0">aarfang</p>
+      <p style="color:#94a3b8;font-size:13px;margin:4px 0 0">Test de configuration SMTP</p>
+    </div>
+    <div style="padding:28px 24px">
+      <p style="font-size:15px;color:#334155;margin-bottom:16px">
+        ✅ La configuration SMTP fonctionne correctement.
+      </p>
+      <table style="width:100%;border-collapse:collapse;background:#f8fafc;border-radius:8px;overflow:hidden;margin-bottom:20px">
+        <tr><td style="padding:8px 12px;font-size:12px;color:#94a3b8">Hôte</td><td style="padding:8px 12px;font-size:13px;font-weight:600;color:#1e293b">${env.SMTP_HOST}:${env.SMTP_PORT}</td></tr>
+        <tr style="background:#f1f5f9"><td style="padding:8px 12px;font-size:12px;color:#94a3b8">Expéditeur</td><td style="padding:8px 12px;font-size:13px;font-weight:600;color:#1e293b">${env.SMTP_FROM}</td></tr>
+        <tr><td style="padding:8px 12px;font-size:12px;color:#94a3b8">Destinataire</td><td style="padding:8px 12px;font-size:13px;font-weight:600;color:#1e293b">${to}</td></tr>
+      </table>
+      <p style="font-size:12px;color:#94a3b8;margin:0">Envoyé depuis la console super admin aarfang.</p>
+    </div>
+  </div>
+</body>
+</html>`,
+    })
+    console.log(`[superadmin] Test email sent to ${to}`)
+    return c.json({ success: true, to, smtp: `${env.SMTP_HOST}:${env.SMTP_PORT}` })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('[superadmin] Test email failed:', message)
+    return c.json({ error: message }, 500)
+  }
+})
+
 // DELETE /api/superadmin/orgs/:orgId — supprimer une organisation
 app.delete('/orgs/:orgId', async (c) => {
   const { orgId } = c.req.param()

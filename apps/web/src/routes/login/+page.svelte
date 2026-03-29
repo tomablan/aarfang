@@ -58,7 +58,7 @@
 
 <div class="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center transition-colors">
   <!-- Bande amber en haut -->
-  <div class="fixed top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500"></div>
+  <div class="fixed top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-slate-800 via-slate-600 to-slate-800 dark:from-slate-300 dark:via-white dark:to-slate-300"></div>
 
   <!-- Toggle thème (coin supérieur droit) -->
   <button
@@ -115,7 +115,7 @@
         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="email">Email</label>
         <input id="email" type="email" bind:value={email} required
           class="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-500 transition-colors"
-          placeholder="admin@aarfang.com" />
+          placeholder="votre@email.com" />
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="password">Mot de passe</label>

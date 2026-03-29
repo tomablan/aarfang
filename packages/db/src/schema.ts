@@ -70,7 +70,7 @@ export const sites = pgTable('sites', {
   aiRecommendationsAt: timestamp('ai_recommendations_at'),
   techStack: jsonb('tech_stack').$type<{
     cms?: string; ecommerce?: string; framework?: string
-    server?: string; cdn?: string; hosting?: string; language?: string
+    server?: string; cdn?: string; hosting?: string; language?: string; country?: string
   }>(),
   techStackAt: timestamp('tech_stack_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),

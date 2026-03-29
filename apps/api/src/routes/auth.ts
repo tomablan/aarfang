@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 import { getDb, users, organizations } from '@aarfang/db'
 import { signToken, verifyToken } from '../lib/jwt.js'
+import { authMiddleware } from '../middleware/auth.js'
 
 const app = new Hono()
 
@@ -69,6 +70,25 @@ app.get('/me', async (c) => {
   } catch {
     return c.json({ error: 'Invalid token' }, 401)
   }
+})
+
+app.put('/password', authMiddleware, async (c) => {
+  const { currentPassword, newPassword } = await c.req.json<{ currentPassword: string; newPassword: string }>()
+  if (!currentPassword || !newPassword) return c.json({ error: 'currentPassword and newPassword are required' }, 400)
+  if (newPassword.length < 8) return c.json({ error: 'New password must be at least 8 characters' }, 400)
+
+  const userId = c.get('userId') as string
+  const db = getDb()
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1)
+  if (!user) return c.json({ error: 'User not found' }, 404)
+
+  const valid = await bcrypt.compare(currentPassword, user.passwordHash)
+  if (!valid) return c.json({ error: 'Mot de passe actuel incorrect' }, 401)
+
+  const passwordHash = await bcrypt.hash(newPassword, 12)
+  await db.update(users).set({ passwordHash }).where(eq(users.id, userId))
+
+  return c.json({ success: true })
 })
 
 export { app as authRoutes }

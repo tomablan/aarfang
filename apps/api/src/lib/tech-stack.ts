@@ -6,12 +6,35 @@ export interface TechStack {
   cdn?: string
   hosting?: string
   language?: string
+  country?: string
+}
+
+const TLD_COUNTRIES: Record<string, string> = {
+  fr: 'France', de: 'Allemagne', es: 'Espagne', it: 'Italie',
+  gb: 'Royaume-Uni', uk: 'Royaume-Uni', be: 'Belgique', ch: 'Suisse',
+  nl: 'Pays-Bas', pt: 'Portugal', pl: 'Pologne', at: 'Autriche',
+  se: 'Suède', no: 'Norvège', dk: 'Danemark', fi: 'Finlande',
+  lu: 'Luxembourg', re: 'France', mc: 'Monaco',
+  ca: 'Canada', au: 'Australie', nz: 'Nouvelle-Zélande',
+  jp: 'Japon', cn: 'Chine', br: 'Brésil', mx: 'Mexique',
+  in: 'Inde', za: 'Afrique du Sud', ru: 'Russie',
+}
+
+const CF_COUNTRY_NAMES: Record<string, string> = {
+  FR: 'France', DE: 'Allemagne', ES: 'Espagne', IT: 'Italie',
+  GB: 'Royaume-Uni', BE: 'Belgique', CH: 'Suisse', NL: 'Pays-Bas',
+  PT: 'Portugal', PL: 'Pologne', AT: 'Autriche', SE: 'Suède',
+  NO: 'Norvège', DK: 'Danemark', FI: 'Finlande', LU: 'Luxembourg',
+  US: 'États-Unis', CA: 'Canada', AU: 'Australie', NZ: 'Nouvelle-Zélande',
+  JP: 'Japon', CN: 'Chine', BR: 'Brésil', MX: 'Mexique',
+  IN: 'Inde', ZA: 'Afrique du Sud', RU: 'Russie',
 }
 
 // Détecte le stack technologique depuis les headers HTTP + le HTML de la page (pas de dépendance externe)
 export function detectTechStack(
   headers: Record<string, string>,
   html: string,
+  siteUrl?: string,
 ): TechStack {
   const stack: TechStack = {}
   const h = Object.fromEntries(Object.entries(headers).map(([k, v]) => [k.toLowerCase(), v.toLowerCase()]))
@@ -39,6 +62,14 @@ export function detectTechStack(
   else if (h['x-github-request-id']) stack.hosting = 'GitHub Pages'
   else if (h['x-wix-request-id'] || body.includes('static.wixstatic.com')) stack.hosting = 'Wix'
   else if (body.includes('squarespace-cdn.com')) stack.hosting = 'Squarespace'
+  else if (h['x-wpe-request-id'] || h['x-powered-by-wpengine']) stack.hosting = 'WP Engine'
+  else if (h['x-kinsta-cache'] || body.includes('kinsta-cache')) stack.hosting = 'Kinsta'
+  else if (serverHeader.includes('infomaniak') || body.includes('infomaniak')) stack.hosting = 'Infomaniak'
+  else if (h['x-ovh-server'] || serverHeader.includes('ovh')) stack.hosting = 'OVH'
+  else if (h['x-scaleway-lb']) stack.hosting = 'Scaleway'
+  else if (h['fly-request-id']) stack.hosting = 'Fly.io'
+  else if (h['x-render-origin-server']) stack.hosting = 'Render'
+  else if (h['x-railway-static-url'] || h['railway-request-id']) stack.hosting = 'Railway'
 
   // ── Language / Runtime ──
   const poweredBy = h['x-powered-by'] ?? ''
@@ -81,7 +112,7 @@ export function detectTechStack(
     stack.cms = 'TYPO3'
   } else if (body.includes('prestashop') || body.includes('/themes/prestashop')) {
     stack.cms = 'PrestaShop'
-  } else if (body.includes('magento') || body.includes('mage/')) {
+  } else if (body.includes('/skin/frontend/') || body.includes('mage/cookies') || body.includes('mage_messages') || body.includes('/js/mage/')) {
     stack.cms = 'Magento'
   } else if (generator) {
     stack.cms = generator.split(' ').slice(0, 3).join(' ')
@@ -92,7 +123,7 @@ export function detectTechStack(
     if (body.includes('woocommerce') || body.includes('wc-add-to-cart')) stack.ecommerce = 'WooCommerce'
     else if (body.includes('cdn.shopify.com')) stack.ecommerce = 'Shopify'
     else if (body.includes('prestashop')) stack.ecommerce = 'PrestaShop'
-    else if (body.includes('magento') || body.includes('mage/')) stack.ecommerce = 'Magento'
+    else if (body.includes('/skin/frontend/') || body.includes('mage/cookies') || body.includes('mage_messages') || body.includes('/js/mage/')) stack.ecommerce = 'Magento'
   }
 
   // ── Frontend framework ──
@@ -103,6 +134,24 @@ export function detectTechStack(
     else if (body.includes('__sveltekit') || body.includes('sveltekit')) stack.framework = 'SvelteKit'
     else if (body.includes('data-v-app') || body.includes('vue.min.js')) stack.framework = 'Vue.js'
     else if (body.includes('ng-version=') || body.includes('angular/core')) stack.framework = 'Angular'
+  }
+
+  // ── Pays ──
+  // 1. Via header Cloudflare (le plus fiable pour la localisation serveur)
+  const cfCountry = h['cf-ipcountry']
+  if (cfCountry && cfCountry !== 'xx' && cfCountry !== 't1') {
+    stack.country = CF_COUNTRY_NAMES[cfCountry.toUpperCase()] ?? cfCountry.toUpperCase()
+  }
+
+  // 2. Via TLD de l'URL (si pas déjà détecté)
+  if (!stack.country && siteUrl) {
+    try {
+      const hostname = new URL(siteUrl).hostname
+      const tld = hostname.split('.').pop()?.toLowerCase()
+      if (tld && tld !== 'com' && tld !== 'net' && tld !== 'org' && tld !== 'io' && tld !== 'co') {
+        stack.country = TLD_COUNTRIES[tld]
+      }
+    } catch { /* URL invalide */ }
   }
 
   return stack

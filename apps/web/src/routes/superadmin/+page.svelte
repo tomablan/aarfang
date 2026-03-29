@@ -5,7 +5,7 @@
   import { auth, loadStoredToken } from '$lib/stores/auth.svelte.js'
   import { formatDate } from '$lib/utils.js'
 
-  let tab = $state<'orgs' | 'users'>('orgs')
+  let tab = $state<'orgs' | 'users' | 'system'>('orgs')
   let orgs = $state<SuperAdminOrg[]>([])
   let users = $state<SuperAdminUser[]>([])
   let loading = $state(true)
@@ -86,6 +86,25 @@
   const PLAN_LABELS: Record<string, string> = { free: 'Free', pro: 'Pro', agency: 'Agency' }
   const ROLE_LABELS: Record<string, string> = {
     super_admin: 'Super Admin', owner: 'Owner', admin: 'Admin', member: 'Membre', viewer: 'Viewer',
+  }
+
+  // Test email
+  let testEmailTo = $state('')
+  let testEmailLoading = $state(false)
+  let testEmailResult = $state<{ success: boolean; to?: string; smtp?: string; error?: string } | null>(null)
+
+  async function sendTestEmail() {
+    if (!testEmailTo) return
+    testEmailLoading = true
+    testEmailResult = null
+    try {
+      const res = await superadminApi.testEmail(token, testEmailTo)
+      testEmailResult = { success: true, to: res.to, smtp: res.smtp }
+    } catch (err: any) {
+      testEmailResult = { success: false, error: err.message ?? 'Erreur inconnue' }
+    } finally {
+      testEmailLoading = false
+    }
   }
 
   let userSearch = $state('')
@@ -186,13 +205,15 @@
 
 <!-- Onglets -->
 <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1 w-fit mb-6">
-  {#each ([['orgs', 'Organisations'], ['users', 'Utilisateurs']] as const) as [key, label]}
+  {#each ([['orgs', 'Organisations'], ['users', 'Utilisateurs'], ['system', 'Système']] as const) as [key, label]}
     <button
       onclick={() => tab = key}
       class="px-4 py-1.5 rounded-md text-sm font-medium transition-colors {tab === key ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}"
     >
       {label}
-      <span class="ml-1.5 text-xs text-slate-400 dark:text-slate-500">{key === 'orgs' ? orgs.length : users.length}</span>
+      {#if key !== 'system'}
+        <span class="ml-1.5 text-xs text-slate-400 dark:text-slate-500">{key === 'orgs' ? orgs.length : users.length}</span>
+      {/if}
     </button>
   {/each}
 </div>
@@ -252,7 +273,7 @@
   </div>
 
 <!-- Onglet Utilisateurs -->
-{:else}
+{:else if tab === 'users'}
   <div class="mb-4">
     <input bind:value={userSearch} type="search" placeholder="Rechercher par email, nom, organisation…"
       class="w-full max-w-sm border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 dark:bg-slate-800 dark:text-slate-100" />
@@ -291,5 +312,48 @@
         {/each}
       </tbody>
     </table>
+  </div>
+
+<!-- Onglet Système -->
+{:else if tab === 'system'}
+  <div class="space-y-6 max-w-lg">
+
+    <!-- Test email -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
+      <h2 class="font-semibold text-slate-800 dark:text-slate-100 mb-1">Test d'envoi d'email</h2>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Envoie un email de test pour vérifier la configuration SMTP.</p>
+
+      <div class="flex gap-2">
+        <input
+          bind:value={testEmailTo}
+          type="email"
+          placeholder="destinataire@exemple.com"
+          class="flex-1 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400"
+        />
+        <button
+          onclick={sendTestEmail}
+          disabled={testEmailLoading || !testEmailTo}
+          class="px-4 py-2 rounded-lg text-sm font-medium bg-slate-800 dark:bg-slate-700 text-white hover:bg-slate-700 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors whitespace-nowrap"
+        >
+          {testEmailLoading ? 'Envoi…' : 'Envoyer'}
+        </button>
+      </div>
+
+      {#if testEmailResult}
+        {#if testEmailResult.success}
+          <div class="mt-3 p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg text-sm">
+            <p class="font-semibold text-green-800 dark:text-green-300">Email envoyé ✓</p>
+            <p class="text-green-700 dark:text-green-400 mt-0.5">Destinataire : <strong>{testEmailResult.to}</strong></p>
+            <p class="text-green-600 dark:text-green-500 text-xs mt-0.5">Via {testEmailResult.smtp}</p>
+          </div>
+        {:else}
+          <div class="mt-3 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-sm">
+            <p class="font-semibold text-red-800 dark:text-red-300">Échec de l'envoi</p>
+            <p class="text-red-600 dark:text-red-400 mt-0.5 font-mono text-xs break-all">{testEmailResult.error}</p>
+          </div>
+        {/if}
+      {/if}
+    </div>
+
   </div>
 {/if}

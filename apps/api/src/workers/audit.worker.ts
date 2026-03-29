@@ -63,7 +63,7 @@ export async function runAudit(auditId: string, site: Site, crawlData?: CrawlDat
 
     // Détecter et sauvegarder le tech stack (silencieux si erreur)
     try {
-      const techStack = detectTechStack(ctx.page.headers, ctx.page.html)
+      const techStack = detectTechStack(ctx.page.headers, ctx.page.html, site.url)
       if (Object.keys(techStack).length > 0) {
         await db.update(sites).set({ techStack, techStackAt: new Date() }).where(eq(sites.id, site.id))
       }

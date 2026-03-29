@@ -30,6 +30,8 @@ export const authApi = {
       body: JSON.stringify({ email, password }),
     }),
   me: (token: string) => request<{ user: User; org: Org }>('/api/auth/me', { token }),
+  changePassword: (token: string, currentPassword: string, newPassword: string) =>
+    request<{ success: boolean }>('/api/auth/password', { method: 'PUT', token, body: JSON.stringify({ currentPassword, newPassword }) }),
 }
 
 // Sites
@@ -116,13 +118,15 @@ export const superadminApi = {
     ),
   deleteOrg: (token: string, orgId: string) =>
     request<{ success: boolean }>(`/api/superadmin/orgs/${orgId}`, { method: 'DELETE', token }),
+  testEmail: (token: string, to: string) =>
+    request<{ success: boolean; to: string; smtp: string }>('/api/superadmin/test-email', { method: 'POST', token, body: JSON.stringify({ to }) }),
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface User { id: string; email: string; firstName: string | null; lastName: string | null; role: string; orgId: string }
 export interface Org { name: string; slug: string; plan: string }
-export interface TechStack { cms?: string; ecommerce?: string; framework?: string; server?: string; cdn?: string; hosting?: string; language?: string }
+export interface TechStack { cms?: string; ecommerce?: string; framework?: string; server?: string; cdn?: string; hosting?: string; language?: string; country?: string }
 export interface Site { id: string; orgId: string; url: string; name: string; cmsType: string | null; isEcommerce: boolean; status: string; aiSummary: string | null; aiSummaryAt: string | null; aiRecommendations: string | null; aiRecommendationsAt: string | null; techStack: TechStack | null; techStackAt: string | null; createdAt: string }
 export interface SiteWithAudit extends Site { latestAudit: Audit | null }
 export interface AuditScores { global: number; technique: number; securite: number; conformite: number; seo_technique: number; seo_local: number; opportunites: number; sea: number; accessibilite: number }
