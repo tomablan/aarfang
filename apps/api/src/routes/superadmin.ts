@@ -6,7 +6,8 @@ import { authMiddleware } from '../middleware/auth.js'
 import { isSuperAdmin } from '../lib/access.js'
 import { sendOrgInviteEmail } from '../lib/alerts.js'
 
-const app = new Hono()
+type Vars = { Variables: { orgId: string; userId: string; role: string } }
+const app = new Hono<Vars>()
 app.use('*', authMiddleware)
 
 // Guard super_admin sur toutes les routes

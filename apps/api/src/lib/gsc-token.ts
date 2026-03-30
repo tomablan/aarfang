@@ -52,7 +52,7 @@ export async function getValidGscToken(orgId: string): Promise<string | null> {
     lastTestedAt: new Date(),
   }).where(eq(integrations.id, row.id))
 
-  return newCreds.accessToken
+  return newCreds.accessToken ?? null
 }
 
 async function refreshAccessToken(

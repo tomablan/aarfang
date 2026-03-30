@@ -54,7 +54,7 @@ app.get('/gsc', async (c) => {
   }
 
   // State signé : userId + orgId, expire dans 10 minutes
-  const state = await signToken({ sub: payload.sub, orgId: payload.orgId }, '10m')
+  const state = await signToken({ sub: payload.sub, orgId: payload.orgId, role: '' }, '10m')
 
   const params = new URLSearchParams({
     client_id: stored.creds.clientId,

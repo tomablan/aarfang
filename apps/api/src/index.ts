@@ -45,7 +45,8 @@ app.route('/api/org', orgRoutes)
 app.route('/api/webhooks', webhooksRoutes)
 app.route('/api/superadmin', superadminRoutes)
 
-serve({ fetch: app.fetch, port: env.API_PORT, hostname: env.API_HOST, maxRequestBodySize: 20 * 1024 * 1024 /* 20 MB */ }, (info) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+serve({ fetch: app.fetch, port: env.API_PORT, hostname: env.API_HOST, maxRequestBodySize: 20 * 1024 * 1024 /* 20 MB */ } as any, (info) => {
   console.log(`🚀 API running on http://${info.address}:${info.port}`)
 })
 

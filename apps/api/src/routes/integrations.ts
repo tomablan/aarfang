@@ -4,7 +4,8 @@ import { getDb, integrations } from '@aarfang/db'
 import { authMiddleware } from '../middleware/auth.js'
 import { encrypt, decrypt } from '../lib/crypto.js'
 
-const app = new Hono()
+type Vars = { Variables: { orgId: string; userId: string; role: string } }
+const app = new Hono<Vars>()
 app.use('*', authMiddleware)
 
 // Lister les intégrations de l'org (credentials masqués)

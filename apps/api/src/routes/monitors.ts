@@ -4,7 +4,8 @@ import { getDb, sites, monitors } from '@aarfang/db'
 import { authMiddleware } from '../middleware/auth.js'
 import { scheduleMonitor, unscheduleMonitor } from '../lib/queue.js'
 
-const app = new Hono()
+type Vars = { Variables: { orgId: string; userId: string; role: string } }
+const app = new Hono<Vars>()
 app.use('*', authMiddleware)
 
 // Récupérer la config monitor d'un site

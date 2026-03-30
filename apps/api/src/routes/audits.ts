@@ -6,7 +6,8 @@ import { canAccessSite } from '../lib/access.js'
 import { runAudit } from '../workers/audit.worker.js'
 import { parseScreamingFrogCsv, DEFAULT_CRAWL_OPTIONS, type CrawlData, type CrawlOptions } from '@aarfang/signals'
 
-const app = new Hono()
+type Vars = { Variables: { orgId: string; userId: string; role: string } }
+const app = new Hono<Vars>()
 app.use('*', authMiddleware)
 
 // Déclencher un audit manuel
@@ -46,7 +47,7 @@ app.post('/sites/:siteId/audits', async (c) => {
         const raw = formData.get('crawlOptions')
         const parsed = raw && typeof raw === 'string' ? JSON.parse(raw) : {}
         crawlOptions = { ...DEFAULT_CRAWL_OPTIONS, ...parsed }
-        console.log(`[audit] Crawl auto configuré : max=${crawlOptions.maxPages}, delay=${crawlOptions.delayMs}ms`)
+        if (crawlOptions) console.log(`[audit] Crawl auto configuré : max=${crawlOptions.maxPages}, delay=${crawlOptions.delayMs}ms`)
       }
     } catch (err) {
       console.warn('[audit] Erreur parsing FormData :', err)

@@ -35,7 +35,34 @@ async function fetchPage(url: string): Promise<FetchedPage> {
       finalUrl: response.url,
       responseTimeMs,
     }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    const responseTimeMs = Date.now() - start
+    return {
+      html: '',
+      headers: {},
+      statusCode: 0,
+      finalUrl: url,
+      responseTimeMs,
+      fetchError: msg,
+      fetchErrorType: classifyFetchError(msg),
+    }
   } finally {
     clearTimeout(timer)
   }
+}
+
+type FetchErrorType = 'ssl_expired' | 'ssl_invalid' | 'unreachable' | 'timeout' | 'network'
+
+function classifyFetchError(msg: string): FetchErrorType {
+  const m = msg.toUpperCase()
+  if (m.includes('CERT_HAS_EXPIRED') || m.includes('CERTIFICATE_EXPIRED')) return 'ssl_expired'
+  if (
+    m.includes('SSL') || m.includes('TLS') || m.includes('CERT') ||
+    m.includes('UNABLE_TO_VERIFY') || m.includes('DEPTH_ZERO_SELF_SIGNED') ||
+    m.includes('SELF_SIGNED_CERT') || m.includes('ERR_SSL')
+  ) return 'ssl_invalid'
+  if (m.includes('ABORT') || m.includes('TIMED OUT') || m.includes('TIMEOUT')) return 'timeout'
+  if (m.includes('ECONNREFUSED') || m.includes('ENOTFOUND') || m.includes('ECONNRESET')) return 'unreachable'
+  return 'network'
 }

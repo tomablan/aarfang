@@ -1,5 +1,6 @@
 import { Queue, Worker, type Job } from 'bullmq'
 import IORedis from 'ioredis'
+import type { Redis } from 'ioredis'
 import { getDb, sites, audits } from '@aarfang/db'
 import { eq } from 'drizzle-orm'
 import { env } from '../env.js'
@@ -10,16 +11,17 @@ export interface AuditJobData {
   triggeredBy: string | null
 }
 
-let connection: IORedis | null = null
+let connection: Redis | null = null
 let auditQueue: Queue<AuditJobData> | null = null
 let auditWorker: Worker<AuditJobData> | null = null
 
-function getConnection(): IORedis {
+function getConnection(): Redis {
   if (!connection) {
-    connection = new IORedis(env.REDIS_URL, { maxRetriesPerRequest: null })
-    connection.on('error', (err) => console.error('[redis] Connection error:', err.message))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    connection = new (IORedis as any)(env.REDIS_URL, { maxRetriesPerRequest: null }) as Redis
+    connection.on('error', (err: Error) => console.error('[redis] Connection error:', err.message))
   }
-  return connection
+  return connection!
 }
 
 export function getAuditQueue(): Queue<AuditJobData> {
@@ -104,6 +106,6 @@ export async function getScheduledJobs(): Promise<{ siteId: string; pattern: str
   return repeatables.map((r) => ({
     siteId: r.id?.replace('monitor:', '') ?? '',
     pattern: r.pattern ?? '',
-    next: r.next,
+    next: r.next ?? 0,
   }))
 }

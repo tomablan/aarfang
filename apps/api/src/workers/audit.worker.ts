@@ -61,6 +61,21 @@ export async function runAudit(auditId: string, site: Site, crawlData?: CrawlDat
 
     const ctx = await buildAuditContext(site, integrations, crawlData)
 
+    // Si le fetch principal a échoué, stocker un message lisible mais continuer l'audit
+    // (les signaux HTML retourneront 'skipped', les signaux SSL/HTTPS retourneront 'critical')
+    if (ctx.page.fetchError) {
+      const typeLabels: Record<string, string> = {
+        ssl_expired: 'Certificat SSL expiré — le site est inaccessible.',
+        ssl_invalid: 'Erreur SSL — certificat invalide ou mal configuré.',
+        timeout: 'Le site n\'a pas répondu dans le délai imparti (15 s).',
+        unreachable: 'Serveur inaccessible — vérifiez que le site est en ligne.',
+        network: 'Erreur réseau lors de l\'accès au site.',
+      }
+      const label = typeLabels[ctx.page.fetchErrorType ?? 'network'] ?? 'Site inaccessible lors de l\'audit.'
+      await db.update(audits).set({ errorMessage: label }).where(eq(audits.id, auditId))
+      console.warn(`[audit:${auditId}] Site inaccessible (${ctx.page.fetchErrorType}): ${ctx.page.fetchError}`)
+    }
+
     // Détecter et sauvegarder le tech stack (silencieux si erreur)
     try {
       const techStack = detectTechStack(ctx.page.headers, ctx.page.html, site.url)

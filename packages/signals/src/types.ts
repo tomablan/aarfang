@@ -17,6 +17,10 @@ export interface FetchedPage {
   statusCode: number
   finalUrl: string
   responseTimeMs: number
+  /** Présent si la page n'a pas pu être récupérée (SSL down, timeout, site inaccessible…) */
+  fetchError?: string
+  /** Catégorie de l'erreur de fetch pour un traitement ciblé par les signaux */
+  fetchErrorType?: 'ssl_expired' | 'ssl_invalid' | 'unreachable' | 'timeout' | 'network'
 }
 
 // Credentials décryptés pour chaque provider — vides si non configurés

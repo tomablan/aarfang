@@ -22,6 +22,23 @@ export const sslExpiry: Signal = {
   category: 'securite',
   weight: 3,
   async analyze(ctx: AuditContext): Promise<SignalResult> {
+    // Erreur SSL lors du fetch de la page — certificat inaccessible ou invalide
+    if (ctx.page.fetchErrorType === 'ssl_expired') {
+      return {
+        score: 0, status: 'critical',
+        details: { fetchError: ctx.page.fetchError },
+        recommendations: ['Renouveler le certificat SSL immédiatement — il est expiré et le site est inaccessible.'],
+        summary: 'Certificat SSL expiré — le site est inaccessible',
+      }
+    }
+    if (ctx.page.fetchErrorType === 'ssl_invalid') {
+      return {
+        score: 0, status: 'critical',
+        details: { fetchError: ctx.page.fetchError },
+        recommendations: ['Vérifier la configuration SSL du serveur — le certificat est invalide ou mal configuré.'],
+        summary: 'Erreur SSL — certificat invalide ou mal configuré',
+      }
+    }
     if (!ctx.page.finalUrl.startsWith('https://')) {
       return { score: 0, status: 'skipped', details: { reason: 'HTTPS not enabled' }, recommendations: [] }
     }

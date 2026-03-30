@@ -6,7 +6,8 @@ import { isPrivileged, canAccessSite } from '../lib/access.js'
 import { generateAiSummary, generateAiRecommendations, type AiSummaryInput, type AiRecommendationsInput } from '../lib/ai.js'
 import { loadOrgIntegrations } from './integrations.js'
 
-const app = new Hono()
+type Vars = { Variables: { orgId: string; userId: string; role: string } }
+const app = new Hono<Vars>()
 app.use('*', authMiddleware)
 
 // Lister les sites de l'org (filtrés selon le rôle)

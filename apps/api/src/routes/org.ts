@@ -6,7 +6,8 @@ import { authMiddleware } from '../middleware/auth.js'
 
 const ROLE_RANK: Record<string, number> = { owner: 4, admin: 3, member: 2, viewer: 1 }
 
-const app = new Hono()
+type Vars = { Variables: { orgId: string; userId: string; role: string } }
+const app = new Hono<Vars>()
 app.use('*', authMiddleware)
 
 // GET /api/org/users — liste les membres de l'org

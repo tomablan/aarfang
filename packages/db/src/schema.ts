@@ -26,7 +26,7 @@ export const integrationProviderEnum = pgEnum('integration_provider', [
 export const integrationStatusEnum = pgEnum('integration_status', ['active', 'invalid', 'revoked'])
 export const auditStatusEnum = pgEnum('audit_status', ['pending', 'running', 'completed', 'failed'])
 export const signalCategoryEnum = pgEnum('signal_category', [
-  'technique', 'securite', 'conformite', 'seo_technique', 'seo_local', 'opportunites', 'sea', 'accessibilite',
+  'technique', 'securite', 'conformite', 'seo_technique', 'seo_local', 'opportunites', 'sea', 'accessibilite', 'ecoconception',
 ])
 export const signalStatusEnum = pgEnum('signal_status', ['good', 'warning', 'critical', 'skipped'])
 

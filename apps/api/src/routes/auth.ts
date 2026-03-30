@@ -5,7 +5,8 @@ import { getDb, users, organizations } from '@aarfang/db'
 import { signToken, verifyToken } from '../lib/jwt.js'
 import { authMiddleware } from '../middleware/auth.js'
 
-const app = new Hono()
+type Vars = { Variables: { orgId: string; userId: string; role: string } }
+const app = new Hono<Vars>()
 
 app.post('/login', async (c) => {
   const { email, password } = await c.req.json<{ email: string; password: string }>()
