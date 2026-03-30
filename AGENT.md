@@ -1,9 +1,8 @@
 # AGENT.md — aarfang
 
 Plateforme SaaS d'audit qualité de sites internet. Permet aux équipes commerciales et clients
-de visualiser un score de santé par site, découpé en catégories de signaux (Technique, Sécurité,
-SEO Technique, SEO Local, Opportunités). Les audits peuvent être déclenchés manuellement ou
-automatiquement via un runner planifié.
+de visualiser un score de santé par site, découpé en catégories de signaux. Les audits peuvent
+être déclenchés manuellement ou automatiquement via un runner planifié.
 
 ---
 
@@ -11,14 +10,23 @@ automatiquement via un runner planifié.
 
 | Couche | Technologie | Notes |
 |---|---|---|
-| Frontend | SvelteKit + TypeScript | SSR, i18n natif |
-| UI | shadcn-svelte + Tailwind CSS | Composants accessibles |
+| Frontend | SvelteKit 2 + TypeScript | **Svelte 5 runes** (`$state`, `$derived`, `$effect`, `$props`) |
+| UI | Tailwind CSS v4 | Dark mode via `.dark` class (`@variant dark`) — pas de `darkMode: 'class'` en v4 |
 | API | Node.js + Hono + TypeScript | Léger, performant |
-| BDD | PostgreSQL + Drizzle ORM | Type-safe, migrations versionnées |
+| BDD | PostgreSQL + Drizzle ORM | Type-safe, migrations versionnées manuellement |
 | Queue / Cron | BullMQ + Redis | Audits asynchrones, scheduling monitors |
-| Crawl | Playwright | Rendu JS, screenshots, métriques DOM |
-| Infra | Docker Compose | Self-hosted ; portable vers Railway/Fly/VPS |
+| Crawl | Playwright | Rendu JS, métriques DOM |
+| HTML parsing | Cheerio | Analyse DOM statique dans les signaux |
+| Auth | bcryptjs + JWT | bcrypt cost 12, JWT 24h access + 7j refresh |
+| Infra | Docker Compose + Coolify | Self-hosted sur VPS OVH |
 | Monorepo | pnpm workspaces | |
+
+---
+
+## Git
+
+- Branche principale : **`master`** (pas `main`)
+- Commits : Conventional Commits (`feat:`, `fix:`, `chore:`, etc.)
 
 ---
 
@@ -53,7 +61,7 @@ Tenant racine. Toutes les données sont isolées par organisation.
 {
   id: uuid PK
   name: string
-  slug: string UNIQUE         // utilisé dans les URLs
+  slug: string UNIQUE
   plan: enum('free','pro','agency')
   createdAt: timestamp
 }
@@ -66,29 +74,37 @@ Tenant racine. Toutes les données sont isolées par organisation.
   orgId: uuid FK → organizations
   email: string UNIQUE
   passwordHash: string
-  role: enum('owner','admin','member','viewer')
+  role: enum('owner','admin','member','viewer','super_admin')
+  firstName: string | null
+  lastName: string | null
   createdAt: timestamp
 }
 ```
 
 ### `sites`
-Un site = un domaine auditable appartenant à une organisation.
-
 ```ts
 {
   id: uuid PK
   orgId: uuid FK → organizations
-  url: string                 // URL canonique (ex: https://example.com)
-  name: string                // Nom d'affichage
+  url: string
+  name: string
   cmsType: enum('wordpress','prestashop','other') | null
   status: enum('active','paused','archived')
+  isEcommerce: boolean
+  aiSummary: string | null
+  aiRecommendations: jsonb | null
+  techStack: jsonb {            // détecté automatiquement à l'audit
+    cms?: string
+    hosting?: string
+    country?: string            // détecté via cf-ipcountry ou TLD
+    analytics?: string[]
+    ...
+  } | null
   createdAt: timestamp
 }
 ```
 
 ### `monitors`
-Configuration du runner automatique par site.
-
 ```ts
 {
   id: uuid PK
@@ -98,21 +114,18 @@ Configuration du runner automatique par site.
   lastRunAt: timestamp | null
   nextRunAt: timestamp | null
   alertOnDegradation: boolean
-  degradationThreshold: int   // points de score en dessous duquel alerter
+  degradationThreshold: int
 }
 ```
 
 ### `integrations`
-Clés API et credentials tiers, chiffrés au repos (AES-256).
-Peut être au niveau de l'organisation ou d'un site spécifique.
-
 ```ts
 {
   id: uuid PK
   orgId: uuid FK → organizations
-  siteId: uuid FK → sites | null   // null = intégration org-level
-  provider: enum('semrush','gsc','pagespeed','betterstack','wordpress','prestashop')
-  credentials: string              // JSON chiffré (clé API, tokens OAuth, etc.)
+  siteId: uuid FK → sites | null
+  provider: enum('semrush','gsc','pagespeed','betterstack','wordpress','prestashop','openai','anthropic','gemini')
+  credentials: string              // JSON chiffré AES-256-GCM
   status: enum('active','invalid','revoked')
   createdAt: timestamp
   lastTestedAt: timestamp | null
@@ -120,8 +133,6 @@ Peut être au niveau de l'organisation ou d'un site spécifique.
 ```
 
 ### `audits`
-Snapshot daté de l'état d'un site. Immuable une fois completed.
-
 ```ts
 {
   id: uuid PK
@@ -130,31 +141,33 @@ Snapshot daté de l'état d'un site. Immuable une fois completed.
   status: enum('pending','running','completed','failed')
   startedAt: timestamp | null
   completedAt: timestamp | null
-  scores: jsonb {                        // scores agrégés pour accès rapide
-    global: number                       // 0–100
+  scores: jsonb {
+    global: number
     technique: number
     securite: number
+    conformite: number
     seo_technique: number
     seo_local: number
     opportunites: number
+    sea: number
+    accessibilite: number
+    ecoconception: number
   } | null
   errorMessage: string | null
 }
 ```
 
 ### `audit_results`
-Un enregistrement par signal analysé, dans un audit.
-
 ```ts
 {
   id: uuid PK
   auditId: uuid FK → audits
-  signalId: string              // identifiant du signal (ex: 'ssl_expiry')
-  category: enum(...)           // dénormalisé pour requêtes filtrées
-  score: int | null             // null si status = 'skipped'
+  signalId: string
+  category: enum('technique','securite','conformite','seo_technique','seo_local','opportunites','sea','accessibilite','ecoconception')
+  score: int | null
   status: enum('good','warning','critical','skipped')
-  details: jsonb                // données brutes spécifiques au signal
-  recommendations: jsonb        // string[] — actions recommandées (i18n keys)
+  details: jsonb
+  recommendations: jsonb   // string[]
 }
 ```
 
@@ -163,46 +176,35 @@ Un enregistrement par signal analysé, dans un audit.
 ## Architecture des Signaux
 
 Chaque signal est un module TypeScript indépendant dans `packages/signals/src/signals/`.
-Le runner les importe automatiquement via un index barrel.
+Le runner les importe via `packages/signals/src/runner.ts`.
 
 ### Interface Signal
 
 ```ts
-// packages/signals/src/types.ts
-
 export type SignalCategory =
   | 'technique'
   | 'securite'
+  | 'conformite'
   | 'seo_technique'
   | 'seo_local'
   | 'opportunites'
+  | 'sea'
+  | 'accessibilite'
+  | 'ecoconception'
 
-export type SignalStatus = 'good' | 'warning' | 'critical' | 'skipped'
-
-export interface AuditContext {
-  site: Site
-  html: string                          // HTML brut de la page principale
-  headers: Record<string, string>       // Headers HTTP de la réponse
-  playwright: {
-    page: Page                          // Instance Playwright connectée
-    metrics: PlaywrightMetrics          // CWV, timings
-  }
-  integrations: IntegrationClient       // Clients instanciés pour les intégrations disponibles
+export interface Signal {
+  id: string           // snake_case unique (ex: 'ssl_expiry')
+  category: SignalCategory
+  weight: number
+  requiredIntegrations?: string[]
+  analyze(ctx: AuditContext): Promise<SignalResult>
 }
 
 export interface SignalResult {
-  score: number                         // 0–100
-  status: SignalStatus
-  details: Record<string, unknown>      // données brutes libres
-  recommendations: string[]             // clés i18n (ex: 'signals.ssl_expiry.rec.renew')
-}
-
-export interface Signal {
-  id: string                            // snake_case unique (ex: 'ssl_expiry')
-  category: SignalCategory
-  weight: number                        // poids relatif dans la catégorie (ex: 1–5)
-  requiredIntegrations?: string[]       // si vide = signal natif sans dépendance externe
-  analyze(ctx: AuditContext): Promise<SignalResult>
+  score: number        // 0–100
+  status: 'good' | 'warning' | 'critical' | 'skipped'
+  details: Record<string, unknown>
+  recommendations: string[]
 }
 ```
 
@@ -210,81 +212,72 @@ export interface Signal {
 
 ```
 score_catégorie = Σ(signal.score × signal.weight) / Σ(signal.weight)
-                  (signaux skipped exclus du calcul)
-
-score_global = moyenne pondérée des scores par catégorie
-               (poids par défaut : technique×1, securite×1.5, seo_technique×1,
-                seo_local×0.8, opportunites×0.7)
+score_global = moyenne pondérée des catégories
+  (technique×1, securite×1.5, conformite×1, seo_technique×1,
+   seo_local×0.8, opportunites×0.7, sea×0.8, accessibilite×0.9, ecoconception×1)
 ```
 
-### Signaux initiaux prévus
+### Ajouter un signal
 
-**Technique**
-- `page_speed_score` — Score Lighthouse performance (PageSpeed API)
-- `core_web_vitals` — LCP, FID, CLS (PageSpeed API)
-- `mobile_friendly` — Test responsive (PageSpeed API)
-- `ttfb` — Time To First Byte (Playwright)
-- `broken_links` — Liens internes cassés (Playwright crawler)
-- `redirects_chain` — Chaînes de redirections excessives
+1. Créer `packages/signals/src/signals/<id>.ts` — exporter un objet `Signal`
+2. Importer et ajouter à `ALL_SIGNALS` dans `packages/signals/src/runner.ts`
+3. Ajouter le libellé dans `signalLabel()` dans `apps/web/src/lib/utils.ts`
+4. Si nouvelle catégorie : voir section "Migrations DB" ci-dessous
 
-**Sécurité**
-- `https_enabled` — HTTPS actif
-- `ssl_expiry` — Validité du certificat SSL
-- `security_headers` — CSP, HSTS, X-Frame-Options, X-Content-Type (headers HTTP)
-- `mixed_content` — Ressources HTTP sur page HTTPS (Playwright)
-- `cms_version` — Version CMS exposée / vulnérable (plugin WP/PS)
+### Signaux existants (55 signaux)
 
-**SEO Technique**
-- `meta_title` — Présence, longueur, unicité
-- `meta_description` — Présence, longueur
-- `h1_tag` — Présence et unicité du H1
-- `sitemap` — Présence et validité de sitemap.xml
-- `robots_txt` — Présence et cohérence de robots.txt
-- `canonical_tag` — Canonical correctement défini
-- `structured_data` — JSON-LD présent et valide
-- `gsc_errors` — Erreurs d'indexation (Google Search Console)
-- `keyword_visibility` — Visibilité sur mots-clés cibles (Semrush)
+**Sécurité** : `https_enabled`, `ssl_expiry`, `security_headers`
 
-**SEO Local**
-- `local_schema` — Schema.org LocalBusiness présent et complet
-- `nap_consistency` — Cohérence Nom / Adresse / Téléphone
-- `google_business_profile` — Fiche GBP connectée (GSC)
+**Conformité** : `cookie_consent`, `legal_pages`
 
-**Opportunités / Lead Gen**
-- `cta_presence` — Call-to-action visible above the fold
-- `phone_visible` — Numéro de téléphone accessible
-- `contact_form` — Formulaire de contact présent
-- `live_chat` — Chat en direct détecté
-- `missing_landing_pages` — Pages de destination manquantes (Semrush)
-- `uptime_score` — Disponibilité mesurée (BetterStack)
+**Technique** : `page_speed`, `server_response_time`, `viewport_meta`, `structured_data`,
+`images_alt`, `open_graph`, `core_web_vitals`
+
+**SEO Technique** : `meta_title`, `meta_description`, `h1_tag`, `canonical_tag`, `sitemap`,
+`robots_txt`, `keyword_consistency`, `gsc_search_performance`, `gsc_keyword_opportunities`,
+`crawl_duplicate_titles`, `crawl_broken_pages`, `crawl_redirects`, `crawl_thin_content`,
+`crawl_depth`, `crawl_noindex`, `crawl_internal_linking`, `crawl_cannibalization`,
+`crawl_meta_coverage`
+
+**SEO Local** : `local_schema`, `review_schema`
+
+**Opportunités** : `cta_presence`, `phone_visible`, `contact_form`, `social_presence`,
+`trust_signals`, `live_chat`, `lead_capture`, `blog_presence`, `content_freshness`,
+`video_presence`, `pricing_page`, `landing_page_detection`
+
+**SEA & Tracking** : `analytics_setup`, `google_ads_tag`, `meta_pixel`, `sea_readiness`
+
+**Accessibilité** : `accessibility_interactive`, `accessibility_structure`
+
+**Éco-conception** : `eco_page_weight`, `eco_compression`, `eco_cache_policy`,
+`eco_image_optimization`, `eco_third_party_scripts`, `eco_fonts`
 
 ---
 
-## Architecture des Intégrations
+## Migrations DB
 
-Chaque connecteur est un module dans `packages/integrations/src/`.
+Les migrations sont des fichiers SQL manuels (pas de `drizzle-kit push` en prod).
 
-```ts
-// packages/integrations/src/types.ts
+### Créer une migration
 
-export interface IntegrationConnector {
-  provider: string
-  test(credentials: Record<string, string>): Promise<{ ok: boolean; error?: string }>
-  getClient(credentials: Record<string, string>): unknown  // client typé par connecteur
-}
+1. Créer `packages/db/drizzle/<idx>_<tag>.sql` (ex: `0013_foo_bar.sql`)
+2. Ajouter l'entrée dans `packages/db/drizzle/meta/_journal.json` :
+   ```json
+   { "idx": 13, "version": "7", "when": 1774636000000, "tag": "0013_foo_bar", "breakpoints": true }
+   ```
+3. Appliquer en production via Docker :
+   ```bash
+   docker exec -i <postgres-container> psql -U <user> -d <db> < packages/db/drizzle/0013_foo_bar.sql
+   ```
+
+### Ajouter une valeur à un enum PostgreSQL
+
+```sql
+ALTER TYPE "public"."signal_category" ADD VALUE IF NOT EXISTS 'nouvelle_valeur';
 ```
 
-| Connecteur | Fichier | Données fournies |
-|---|---|---|
-| PageSpeed Insights | `pagespeed.ts` | CWV, Lighthouse scores, mobile |
-| Google Search Console | `gsc.ts` | Impressions, clics, erreurs crawl, indexation |
-| Semrush | `semrush.ts` | Mots-clés, backlinks, visibilité, pages manquantes |
-| BetterStack | `betterstack.ts` | Uptime, incidents, temps de réponse |
-| WordPress | `wordpress.ts` | Pull via REST API exposée par le plugin aarfang-wp |
-| PrestaShop | `prestashop.ts` | Pull via REST API exposée par le module aarfang-ps |
-
-Les credentials sont chiffrés en base. Si un connecteur requis par un signal n'est pas
-configuré pour le site, le signal est retourné avec `status: 'skipped'` (pas de pénalité).
+**Important** : PostgreSQL ne permet pas `ALTER TYPE ... ADD VALUE` dans une transaction.
+Appliquer seul dans une migration dédiée.
 
 ---
 
@@ -294,21 +287,21 @@ configuré pour le site, le signal est retourné avec `status: 'skipped'` (pas d
 # Auth
 POST   /api/auth/login
 POST   /api/auth/logout
-POST   /api/auth/refresh
 GET    /api/auth/me
+PUT    /api/auth/password          # Changer son mot de passe (authMiddleware requis)
 
 # Sites
-GET    /api/sites                        # Liste des sites de l'org
-POST   /api/sites                        # Créer un site
-GET    /api/sites/:siteId               # Détail + dernier score
+GET    /api/sites
+POST   /api/sites
+GET    /api/sites/:siteId
 PUT    /api/sites/:siteId
 DELETE /api/sites/:siteId
 
 # Audits
-POST   /api/sites/:siteId/audits        # Déclencher un audit manuel
-GET    /api/sites/:siteId/audits        # Historique des audits
-GET    /api/sites/:siteId/audits/latest # Dernier audit avec résultats complets
-GET    /api/audits/:auditId             # Audit complet avec tous les résultats signaux
+POST   /api/sites/:siteId/audits
+GET    /api/sites/:siteId/audits
+GET    /api/sites/:siteId/audits/latest
+GET    /api/audits/:auditId
 
 # Monitor
 GET    /api/sites/:siteId/monitor
@@ -318,10 +311,7 @@ PUT    /api/sites/:siteId/monitor
 GET    /api/integrations
 POST   /api/integrations
 DELETE /api/integrations/:id
-POST   /api/integrations/:id/test       # Tester la connexion
-
-# Signaux (registre)
-GET    /api/signals                     # Liste de tous les signaux disponibles
+POST   /api/integrations/:id/test
 
 # Organisation & utilisateurs
 GET    /api/org
@@ -329,10 +319,13 @@ PUT    /api/org
 GET    /api/org/users
 POST   /api/org/users/invite
 DELETE /api/org/users/:userId
-```
 
-Toutes les routes sont protégées par JWT. Le `orgId` est extrait du token — jamais passé
-en paramètre client (isolation multi-tenant garantie côté serveur).
+# Superadmin (role: super_admin uniquement)
+GET    /api/superadmin/stats
+GET    /api/superadmin/orgs
+GET    /api/superadmin/users
+POST   /api/superadmin/test-email   # Tester la configuration SMTP
+```
 
 ---
 
@@ -341,55 +334,42 @@ en paramètre client (isolation multi-tenant garantie côté serveur).
 ```
 /                               → redirect vers /dashboard
 /login
-/dashboard                      → liste des sites avec score résumé
+/dashboard
 /sites/new
-/sites/[siteId]                 → tableau de bord du site (écran principal)
-/sites/[siteId]/audits          → historique des audits
-/sites/[siteId]/audits/[id]     → détail d'un audit
-/sites/[siteId]/settings        → config site + intégrations spécifiques
-/settings/org                   → paramètres de l'organisation
-/settings/integrations          → gestion des clés API org-level
-/settings/users                 → gestion des membres
-```
-
-### Composants principaux
-
-```
-ScoreGauge          — jauge circulaire 0–100 avec couleur selon seuil
-CategoryCard        — carte résumé d'une catégorie (score + top 3 alertes)
-SignalRow           — ligne de détail d'un signal (score, status, recommandations)
-AuditTimeline       — historique graphique des scores dans le temps
-IntegrationBadge    — état d'une intégration (active / non configurée / erreur)
-TriggerAuditButton  — déclencher un audit + polling du statut en temps réel
+/sites/[siteId]                 → tableau de bord du site + audit (sidebar catégories)
+/sites/[siteId]/audits          → historique
+/sites/[siteId]/fiche           → fiche technique (CMS, hosting, country, tech stack)
+/sites/[siteId]/settings
+/settings/org
+/settings/integrations
+/settings/users
+/settings/profile               → infos compte + changement de mot de passe
+/superadmin                     → interface super_admin (onglets: Stats, Orgs, Users, Système)
 ```
 
 ---
 
-## i18n
+## Conventions Svelte 5
 
-Bibliothèque : `paraglide-js` (SvelteKit natif, compile-time, zero-runtime).
-
-```
-apps/web/src/lib/i18n/
-  ├── messages/
-  │   ├── fr.json      # Langue par défaut
-  │   └── en.json
-  └── index.ts
-```
-
-Les clés des recommandations de signaux (`signals.ssl_expiry.rec.renew`) sont stockées
-en base et résolues côté frontend.
+- **`$state`** pour toutes les variables réactives, y compris les refs DOM :
+  ```ts
+  let menuRef = $state<HTMLDivElement | undefined>()   // bind:this compatible
+  ```
+- **`{@const}`** doit être enfant direct d'un block Svelte (`{#if}`, `{#each}`, etc.)
+  — pas dans un `<div>` ordinaire
+- **`{:else if}`** ne peut pas suivre un `{:else}` dans Svelte — toujours mettre les
+  `{:else if}` avant le `{:else}` final
 
 ---
 
-## Sécurité
+## Dark Mode (Tailwind v4)
 
-- Passwords : bcrypt (cost 12)
-- Sessions : JWT access token (15min) + refresh token httpOnly cookie (7j)
-- Credentials intégrations : chiffrés AES-256-GCM, clé dans variable d'environnement
-- Multi-tenant : `orgId` systématiquement vérifié en middleware API, jamais exposé au client
-- Headers de sécurité : Helmet.js sur l'API, CSP sur SvelteKit
-- Rate limiting : sur les routes auth et déclenchement d'audit
+Tailwind v4 n'utilise pas `darkMode: 'class'` dans la config — la bascule se fait via `@variant dark` dans les classes CSS custom. Le mode sombre est activé en ajoutant la classe `.dark` sur `<html>`.
+
+Dans les composants SvelteKit, utiliser les variantes `dark:` normalement :
+```html
+<div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+```
 
 ---
 
@@ -400,8 +380,13 @@ en base et résolues côté frontend.
 DATABASE_URL=postgresql://...
 REDIS_URL=redis://...
 JWT_SECRET=
-ENCRYPTION_KEY=                  # AES-256 pour credentials intégrations
+ENCRYPTION_KEY=           # AES-256 pour credentials intégrations
 API_PORT=3001
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
 
 # apps/web/.env
 PUBLIC_API_URL=http://localhost:3001
@@ -409,76 +394,49 @@ PUBLIC_API_URL=http://localhost:3001
 
 ---
 
-## Docker Compose (self-hosted)
+## Commandes de développement
+
+```bash
+pnpm dev                  # Lance api + web en parallèle
+pnpm build                # Build packages puis apps
+pnpm db:migrate           # Applique les migrations Drizzle
+pnpm db:seed              # Seed initial (org + user super_admin)
+pnpm db:studio            # Drizzle Studio UI
+```
+
+Credentials seed par défaut : `hello@aarfang.com` / `admin1234` (role: `super_admin`)
+
+---
+
+## Docker Compose (production)
 
 Services :
-- `postgres` — PostgreSQL 16
+- `postgres` — PostgreSQL 16 (non exposé externellement)
 - `redis` — Redis 7
 - `api` — Hono API + workers BullMQ
 - `web` — SvelteKit (node adapter)
 
-Le fichier `docker-compose.prod.yml` surcharge pour la production (volumes persistants,
-restart policies, variables via secrets).
+Connexion PostgreSQL en production :
+```bash
+docker exec -it <postgres-container> psql -U <user> -d <db>
+```
 
 ---
 
-## Phases de développement
+## Sécurité
 
-### Phase 1 — Fondations (core)
-- [ ] Init monorepo pnpm + workspaces
-- [ ] Package `db` : schema Drizzle + migrations + client
-- [ ] App `api` : Hono, middleware auth JWT, middleware org, structure routes
-- [ ] App `web` : SvelteKit, layout auth, i18n paraglide, shadcn-svelte
-- [ ] CRUD Sites
-- [ ] Docker Compose avec postgres + redis
-
-### Phase 2 — Runner d'audit
-- [ ] Package `signals` : interface Signal + runner (collecte + calcul score)
-- [ ] Intégration Playwright dans le runner
-- [ ] Job BullMQ pour audit asynchrone
-- [ ] Endpoint déclenchement + polling statut
-- [ ] Implémentation des 10 premiers signaux natifs (sans intégration externe)
-
-### Phase 3 — Dashboard
-- [ ] Page `/sites/[siteId]` : ScoreGauge + CategoryCards
-- [ ] Page détail audit : SignalRow par catégorie
-- [ ] AuditTimeline (historique des scores)
-- [ ] TriggerAuditButton avec statut temps réel (SSE ou polling)
-
-### Phase 4 — Intégrations externes
-- [ ] Package `integrations` : interface ConnectorI
-- [ ] Connecteur PageSpeed Insights (gratuit, priorité 1)
-- [ ] Connecteur Google Search Console
-- [ ] Connecteur Semrush
-- [ ] Connecteur BetterStack
-- [ ] UI gestion des intégrations + test de connexion
-
-### Phase 5 — Monitor / Cron
-- [ ] Table monitors + CRUD
-- [ ] Scheduler BullMQ (repeatable jobs)
-- [ ] Alertes sur dégradation (email ou webhook)
-- [ ] UI configuration du monitor par site
-
-### Phase 6 — Plugins CMS
-- [ ] Plugin WordPress (PHP) : endpoints REST métriques aarfang
-- [ ] Module PrestaShop (PHP) : endpoints REST métriques aarfang
-- [ ] Connecteur `wordpress.ts` + `prestashop.ts`
-- [ ] Signaux CMS : version, plugins vulnérables, performances back-office
-
-### Phase 7 — IA & recommandations
-- [ ] Microservice Python/FastAPI optionnel
-- [ ] Résumé textuel d'audit généré par LLM
-- [ ] Recommandations priorisées et contextualisées
-- [ ] Score prédictif (tendance)
+- Passwords : bcrypt (cost 12)
+- Sessions : JWT 24h access token + refresh token 7j
+- Credentials intégrations : chiffrés AES-256-GCM
+- Multi-tenant : `orgId` vérifié en middleware, jamais exposé au client
+- Rate limiting sur les routes auth et déclenchement d'audit
 
 ---
 
 ## Conventions de code
 
 - TypeScript strict (`strict: true`) partout
-- Nommage : camelCase variables/fonctions, PascalCase composants/types, snake_case BDD
+- camelCase variables/fonctions, PascalCase composants/types, snake_case BDD
 - Chaque signal dans son propre fichier : `packages/signals/src/signals/<id>.ts`
-- Chaque connecteur dans son propre fichier : `packages/integrations/src/connectors/<provider>.ts`
 - Les erreurs de signal ne font jamais planter l'audit : `try/catch` → `status: 'skipped'`
-- Tests : Vitest pour les signaux et utilitaires, Playwright pour les e2e
-- Commits : Conventional Commits (`feat:`, `fix:`, `chore:`, etc.)
+- Labels des signaux et catégories centralisés dans `apps/web/src/lib/utils.ts`
