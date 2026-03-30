@@ -3,6 +3,10 @@
 
 # Frontend
 app.{$DOMAIN} {
+    # Les routes OAuth sont sur l'API (flow navigateur initié depuis app.domain)
+    handle /api/oauth/* {
+        reverse_proxy api:3001
+    }
     reverse_proxy web:3000
 }
 
