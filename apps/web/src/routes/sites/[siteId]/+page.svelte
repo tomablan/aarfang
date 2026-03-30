@@ -24,6 +24,7 @@
   let showModal = $state(false)
   let expandedSignals = $state(new Set<string>())
   let pollingTimer: ReturnType<typeof setInterval> | null = null
+  let auditError = $state('')
   let token = $state('')
   let activeTab = $state<string>('securite')
 
@@ -119,6 +120,7 @@
     showModal = false
     if (auditing) return
     auditing = true
+    auditError = ''
     crawlProgress = null
     crawlStatusMsg = ''
 
@@ -151,12 +153,15 @@
           auditing = false
           crawlProgress = null
           crawlStatusMsg = ''
+          if (a.status === 'failed') {
+            auditError = a.errorMessage ?? 'L\'audit a échoué. Vérifiez que le site est accessible.'
+          }
           await loadData()
         }
       }, 3000)
     } catch (err: any) {
-      console.error(err)
       auditing = false
+      auditError = err?.message ?? 'Impossible de démarrer l\'audit. Vérifiez votre connexion.'
     }
   }
 </script>
@@ -211,6 +216,14 @@
       {/if}
     </button>
   </div>
+
+  {#if auditError}
+    <div class="mb-4 flex items-start gap-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 text-sm text-red-700 dark:text-red-400">
+      <svg class="shrink-0 mt-0.5 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+      <span>{auditError}</span>
+      <button onclick={() => auditError = ''} class="ml-auto shrink-0 text-red-400 hover:text-red-600 dark:hover:text-red-300">✕</button>
+    </div>
+  {/if}
 
   {#if !audit}
     <div class="text-center py-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-500 dark:text-slate-500">
