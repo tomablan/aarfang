@@ -97,9 +97,11 @@
     await loadIntegrations()
   })
 
+  const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
+
   function connectGsc() {
-    // Redirection navigateur vers le flow OAuth (le token est passé en query param)
-    window.location.href = `/api/oauth/gsc?token=${encodeURIComponent(token)}`
+    // Redirection vers l'API (pas une URL relative — en prod l'API est sur un domaine séparé)
+    window.location.href = `${API_URL}/api/oauth/gsc?token=${encodeURIComponent(token)}`
   }
 
   async function loadIntegrations() {
