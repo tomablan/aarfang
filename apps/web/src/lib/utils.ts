@@ -65,6 +65,7 @@ export function signalLabel(id: string): string {
     page_speed: 'Performance (PageSpeed)',
     server_response_time: 'Temps de réponse serveur',
     viewport_meta: 'Balise Viewport',
+    images_optimization: 'Optimisation des images',
     structured_data: 'Données structurées (JSON-LD)',
     images_alt: 'Attributs Alt des images',
     open_graph: 'Balises Open Graph',

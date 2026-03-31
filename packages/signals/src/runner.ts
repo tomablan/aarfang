@@ -10,6 +10,7 @@ import { sitemap } from './signals/sitemap.js'
 import { robotsTxt } from './signals/robots_txt.js'
 import { structuredData } from './signals/structured_data.js'
 import { imagesAlt } from './signals/images_alt.js'
+import { imagesOptimization } from './signals/images_optimization.js'
 import { openGraph } from './signals/open_graph.js'
 import { pageSpeed } from './signals/page_speed.js'
 import { serverResponseTime } from './signals/server_response_time.js'
@@ -79,6 +80,7 @@ export const ALL_SIGNALS: Signal[] = [
   coreWebVitals,
   serverResponseTime,
   viewportMeta,
+  imagesOptimization,
   // Opportunités
   ctaPresence,
   phoneVisible,
