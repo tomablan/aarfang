@@ -97,13 +97,10 @@
     await loadIntegrations()
   })
 
-  // URL de l'API — baked au build depuis VITE_API_URL (docker-compose: VITE_API_URL: ${API_URL})
-  // En dev, VITE_API_URL est vide et le proxy Vite intercepte /api/oauth via localhost:3001
-  const GSC_OAUTH_BASE = (import.meta.env.VITE_API_URL || '') + '/api/oauth/gsc'
-
   function connectGsc() {
-    // Navigation directe vers l'API — contourne le router SvelteKit entièrement
-    window.location.assign(`${GSC_OAUTH_BASE}?token=${encodeURIComponent(token)}`)
+    // Soumettre le formulaire caché — la form action côté serveur redirige vers l'API
+    // Évite tout interception par le router SvelteKit côté client
+    ;(document.getElementById('gsc-oauth-form') as HTMLFormElement)?.submit()
   }
 
   async function loadIntegrations() {
@@ -331,4 +328,10 @@
       {/each}
     </div>
   {/if}
+
+  <!-- Formulaire caché pour initier le flow OAuth GSC côté serveur -->
+  <!-- La form action lit API_URL au runtime et redirige vers l'API (bypass SvelteKit router) -->
+  <form id="gsc-oauth-form" method="post" action="?/connectGsc" style="display:none">
+    <input type="hidden" name="token" value={token} />
+  </form>
 </div>
