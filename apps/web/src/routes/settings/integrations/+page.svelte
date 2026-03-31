@@ -97,9 +97,13 @@
     await loadIntegrations()
   })
 
+  // URL de l'API — baked au build depuis VITE_API_URL (docker-compose: VITE_API_URL: ${API_URL})
+  // En dev, VITE_API_URL est vide et le proxy Vite intercepte /api/oauth via localhost:3001
+  const GSC_OAUTH_BASE = (import.meta.env.VITE_API_URL || '') + '/api/oauth/gsc'
+
   function connectGsc() {
-    // URL relative — SvelteKit proxie vers l'API (voir /api/oauth/gsc/+server.ts)
-    window.location.href = `/api/oauth/gsc?token=${encodeURIComponent(token)}`
+    // Navigation directe vers l'API — contourne le router SvelteKit entièrement
+    window.location.assign(`${GSC_OAUTH_BASE}?token=${encodeURIComponent(token)}`)
   }
 
   async function loadIntegrations() {
