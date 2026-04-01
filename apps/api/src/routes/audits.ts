@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { eq, and, desc } from 'drizzle-orm'
-import { getDb, sites, audits, auditResults } from '@aarfang/db'
+import { getDb, sites, audits, auditResults, crawlPages } from '@aarfang/db'
 import { authMiddleware } from '../middleware/auth.js'
 import { canAccessSite } from '../lib/access.js'
 import { runAudit } from '../workers/audit.worker.js'
@@ -134,6 +134,22 @@ app.get('/audits/:auditId', async (c) => {
 
   const results = await db.select().from(auditResults).where(eq(auditResults.auditId, auditId))
   return c.json({ ...audit, results })
+})
+
+// Pages crawlées d'un audit
+app.get('/audits/:auditId/pages', async (c) => {
+  const orgId = c.get('orgId') as string
+  const userId = c.get('userId') as string
+  const role = c.get('role') as string
+  const { auditId } = c.req.param()
+  const db = getDb()
+
+  const [audit] = await db.select().from(audits).where(eq(audits.id, auditId)).limit(1)
+  if (!audit) return c.json({ error: 'Audit not found' }, 404)
+  if (!await canAccessSite(db, audit.siteId, orgId, userId, role)) return c.json({ error: 'Forbidden' }, 403)
+
+  const pages = await db.select().from(crawlPages).where(eq(crawlPages.auditId, auditId))
+  return c.json(pages)
 })
 
 export { app as auditRoutes }

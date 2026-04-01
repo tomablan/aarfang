@@ -74,6 +74,20 @@ export const auditsApi = {
   get: (token: string, auditId: string) => request<Audit>(`/api/audits/${auditId}`, { token }),
   latest: (token: string, siteId: string) => request<AuditWithResults | null>(`/api/sites/${siteId}/audits/latest`, { token }),
   history: (token: string, siteId: string) => request<Audit[]>(`/api/sites/${siteId}/audits`, { token }),
+  pages: (token: string, auditId: string) => request<CrawlPage[]>(`/api/audits/${auditId}/pages`, { token }),
+}
+
+export interface CrawlPage {
+  id: string
+  auditId: string
+  url: string
+  statusCode: number
+  title: string | null
+  indexable: boolean
+  crawlDepth: number
+  inlinks: number
+  wordCount: number | null
+  contentType: string | null
 }
 
 // Intégrations

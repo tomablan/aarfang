@@ -159,6 +159,21 @@ export const auditResults = pgTable('audit_results', {
   index('audit_results_category_idx').on(t.category),
 ])
 
+export const crawlPages = pgTable('crawl_pages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  auditId: uuid('audit_id').notNull().references(() => audits.id, { onDelete: 'cascade' }),
+  url: text('url').notNull(),
+  statusCode: integer('status_code').notNull(),
+  title: text('title'),
+  indexable: boolean('indexable').notNull().default(true),
+  crawlDepth: integer('crawl_depth').notNull().default(0),
+  inlinks: integer('inlinks').notNull().default(0),
+  wordCount: integer('word_count'),
+  contentType: varchar('content_type', { length: 100 }),
+}, (t) => [
+  index('crawl_pages_audit_idx').on(t.auditId),
+])
+
 // ─── Relations ────────────────────────────────────────────────────────────────
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({

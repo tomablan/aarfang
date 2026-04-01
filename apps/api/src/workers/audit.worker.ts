@@ -1,5 +1,5 @@
 import { eq, and, desc } from 'drizzle-orm'
-import { getDb, audits, auditResults, monitors, sites } from '@aarfang/db'
+import { getDb, audits, auditResults, crawlPages, monitors, sites } from '@aarfang/db'
 import { buildAuditContext, runSignals, computeScores, crawlSite } from '@aarfang/signals'
 import type { IntegrationCredentials, CrawlData, CrawlOptions } from '@aarfang/signals'
 import type { InferSelectModel } from 'drizzle-orm'
@@ -83,6 +83,28 @@ export async function runAudit(auditId: string, site: Site, crawlData?: CrawlDat
         await db.update(sites).set({ techStack, techStackAt: new Date() }).where(eq(sites.id, site.id))
       }
     } catch { /* non bloquant */ }
+
+    // Persister les pages crawlées pour l'arbre de navigation
+    if (crawlData && crawlData.rows.length > 0) {
+      const BATCH = 500
+      for (let i = 0; i < crawlData.rows.length; i += BATCH) {
+        const batch = crawlData.rows.slice(i, i + BATCH)
+        await db.insert(crawlPages).values(
+          batch.map((r) => ({
+            auditId,
+            url: r.url,
+            statusCode: r.statusCode,
+            title: r.title || null,
+            indexable: r.indexable,
+            crawlDepth: r.crawlDepth,
+            inlinks: r.inlinks,
+            wordCount: r.wordCount || null,
+            contentType: r.contentType || null,
+          }))
+        ).catch((err) => console.warn('[audit] crawl_pages insert error:', err))
+      }
+      console.log(`[audit:${auditId}] ${crawlData.rows.length} pages crawlées persistées`)
+    }
 
     const results = await runSignals(ctx)
 

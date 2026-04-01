@@ -192,6 +192,8 @@
         <span class="text-slate-300 dark:text-slate-700">·</span>
         <a href="/sites/{siteId}/fiche" class="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300">Fiche technique</a>
         <span class="text-slate-300 dark:text-slate-700">·</span>
+        <a href="/sites/{siteId}/crawl" class="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300">Arbre de crawl</a>
+        <span class="text-slate-300 dark:text-slate-700">·</span>
         <a href="/sites/{siteId}/settings" class="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300">Paramètres</a>
         {#if audit}
           <span class="text-slate-300 dark:text-slate-700">·</span>
