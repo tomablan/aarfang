@@ -274,7 +274,7 @@
 </div>
 
 <!-- Composant récursif arbre -->
-{#snippet TreeNodeView(node: import('$lib/api.js').CrawlPage extends never ? never : { path: string; fullPath: string; page: CrawlPage | null; children: any[] }, expanded: Set<string>, statusBg: (c: number) => string, toggleNode: (p: string) => void, depth: number, isRoot: boolean)}
+{#snippet TreeNodeView(node: TreeNode, expanded: Set<string>, statusBg: (c: number) => string, toggleNode: (p: string) => void, depth: number, isRoot: boolean)}
   {@const hasChildren = node.children.length > 0}
   {@const isOpen = expanded.has(node.fullPath)}
   {@const p = node.page}
