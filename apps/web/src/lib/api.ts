@@ -136,6 +136,15 @@ export const superadminApi = {
     request<{ success: boolean; to: string; smtp: string }>('/api/superadmin/test-email', { method: 'POST', token, body: JSON.stringify({ to }) }),
 }
 
+// Page audits (deep scoring)
+export const pageAuditsApi = {
+  trigger: (token: string, siteId: string, url: string) =>
+    request<{ id: string; status: string }>(`/api/sites/${siteId}/page-audits`, {
+      method: 'POST', token, body: JSON.stringify({ url }),
+    }),
+  get: (token: string, id: string) => request<PageAudit>(`/api/page-audits/${id}`, { token }),
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface User { id: string; email: string; firstName: string | null; lastName: string | null; role: string; orgId: string }
@@ -153,3 +162,5 @@ export interface OrgMember { id: string; email: string; firstName: string | null
 export interface SiteMember { id: string; email: string; firstName: string | null; lastName: string | null; role: string; grantedAt: string }
 export interface SuperAdminOrg { id: string; name: string; slug: string; plan: string; createdAt: string; userCount: number; siteCount: number }
 export interface SuperAdminUser { id: string; email: string; firstName: string | null; lastName: string | null; role: string; createdAt: string; orgId: string; orgName: string; orgPlan: string }
+export interface PageAuditResult { signalId: string; category: string; score: number | null; status: string; details: Record<string, unknown>; recommendations: string[] }
+export interface PageAudit { id: string; siteId: string; url: string; status: string; scores: AuditScores | null; results: PageAuditResult[] | null; errorMessage: string | null; createdAt: string; completedAt: string | null }

@@ -16,6 +16,7 @@ import { orgRoutes } from './routes/org.js'
 import { oauthRoutes } from './routes/oauth.js'
 import { webhooksRoutes } from './routes/webhooks.js'
 import { superadminRoutes } from './routes/superadmin.js'
+import { pageAuditsRoutes } from './routes/page-audits.js'
 import { startAuditWorker } from './lib/queue.js'
 import { env } from './env.js'
 
@@ -44,6 +45,7 @@ app.route('/api/integrations', integrationsRoutes)
 app.route('/api/org', orgRoutes)
 app.route('/api/webhooks', webhooksRoutes)
 app.route('/api/superadmin', superadminRoutes)
+app.route('/api', pageAuditsRoutes)
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 serve({ fetch: app.fetch, port: env.API_PORT, hostname: env.API_HOST, maxRequestBodySize: 20 * 1024 * 1024 /* 20 MB */ } as any, (info) => {

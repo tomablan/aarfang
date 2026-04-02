@@ -174,6 +174,20 @@ export const crawlPages = pgTable('crawl_pages', {
   index('crawl_pages_audit_idx').on(t.auditId),
 ])
 
+export const pageAudits = pgTable('page_audits', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  siteId: uuid('site_id').notNull().references(() => sites.id, { onDelete: 'cascade' }),
+  url: text('url').notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  scores: jsonb('scores'),
+  results: jsonb('results'),
+  errorMessage: text('error_message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  completedAt: timestamp('completed_at'),
+}, (t) => [
+  index('page_audits_site_idx').on(t.siteId),
+])
+
 // ─── Relations ────────────────────────────────────────────────────────────────
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({

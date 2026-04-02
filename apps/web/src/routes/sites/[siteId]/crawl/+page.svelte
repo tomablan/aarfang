@@ -2,7 +2,8 @@
   import { onMount } from 'svelte'
   import { page } from '$app/stores'
   import { goto } from '$app/navigation'
-  import { auditsApi, sitesApi, type CrawlPage } from '$lib/api.js'
+  import { auditsApi, sitesApi, pageAuditsApi, type CrawlPage, type PageAudit, type PageAuditResult } from '$lib/api.js'
+  import { scoreColor, scoreBg, categoryLabel, signalLabel, statusColor as signalStatusColor } from '$lib/utils.js'
   import { loadStoredToken } from '$lib/stores/auth.svelte.js'
 
   const siteId = $page.params.siteId
@@ -17,6 +18,64 @@
   let search = $state('')
   let filterStatus = $state<'all' | 'ok' | 'redirect' | 'error' | 'noindex'>('all')
   let expanded = $state(new Set<string>())
+
+  // ── Deep scoring ──────────────────────────────────────────────────────────────
+  let deepScoreUrl = $state('')
+  let deepScoreLoading = $state(false)
+  let deepScoreResult = $state<PageAudit | null>(null)
+  let deepScoreError = $state('')
+  let deepScorePolling: ReturnType<typeof setInterval> | null = null
+
+  async function triggerDeepScore(url: string) {
+    deepScoreUrl = url
+    deepScoreLoading = true
+    deepScoreResult = null
+    deepScoreError = ''
+    if (deepScorePolling) clearInterval(deepScorePolling)
+
+    try {
+      const { id } = await pageAuditsApi.trigger(token, siteId, url)
+      deepScorePolling = setInterval(async () => {
+        try {
+          const r = await pageAuditsApi.get(token, id)
+          if (r.status === 'completed' || r.status === 'failed') {
+            clearInterval(deepScorePolling!)
+            deepScorePolling = null
+            deepScoreLoading = false
+            if (r.status === 'failed') {
+              deepScoreError = r.errorMessage ?? 'Audit échoué'
+            } else {
+              deepScoreResult = r
+            }
+          }
+        } catch { /* non bloquant */ }
+      }, 2000)
+    } catch (e: any) {
+      deepScoreLoading = false
+      deepScoreError = e.message ?? 'Erreur'
+    }
+  }
+
+  function closeDeepScore() {
+    if (deepScorePolling) clearInterval(deepScorePolling)
+    deepScorePolling = null
+    deepScoreUrl = ''
+    deepScoreResult = null
+    deepScoreError = ''
+    deepScoreLoading = false
+  }
+
+  const CATEGORIES = ['technique', 'securite', 'conformite', 'seo_technique', 'seo_local', 'opportunites', 'sea', 'accessibilite', 'ecoconception'] as const
+
+  function groupedResults(results: PageAuditResult[]): Record<string, PageAuditResult[]> {
+    const out: Record<string, PageAuditResult[]> = {}
+    for (const r of results) {
+      if (r.status === 'skipped') continue
+      if (!out[r.category]) out[r.category] = []
+      out[r.category].push(r)
+    }
+    return out
+  }
 
   // ── Tree building ─────────────────────────────────────────────────────────────
 
@@ -248,7 +307,7 @@
         {:else}
           <div class="divide-y divide-slate-100 dark:divide-slate-800">
             {#each filteredPages as p}
-              <div class="flex items-start gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+              <div class="flex items-start gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
                 <span class="shrink-0 text-xs font-mono px-1.5 py-0.5 rounded {statusBg(p.statusCode)}">{p.statusCode}</span>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-mono text-slate-700 dark:text-slate-300 truncate">{new URL(p.url).pathname || '/'}</p>
@@ -260,6 +319,10 @@
                   {#if !p.indexable}<span class="text-amber-500">noindex</span>{/if}
                   {#if p.inlinks > 0}<span>{p.inlinks} liens</span>{/if}
                   <span>prof. {p.crawlDepth}</span>
+                  <button
+                    onclick={() => triggerDeepScore(p.url)}
+                    class="opacity-0 group-hover:opacity-100 transition-opacity text-xs px-2 py-0.5 rounded bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-300"
+                  >Score</button>
                 </div>
               </div>
             {/each}
@@ -273,6 +336,98 @@
   {/if}
 </div>
 
+<!-- Modal deep score -->
+{#if deepScoreUrl}
+  <!-- Backdrop -->
+  <button
+    class="fixed inset-0 bg-black/40 z-40"
+    onclick={closeDeepScore}
+    aria-label="Fermer"
+  ></button>
+
+  <!-- Panel -->
+  <div class="fixed inset-y-0 right-0 z-50 w-full max-w-xl bg-white dark:bg-slate-900 shadow-xl flex flex-col overflow-hidden">
+    <!-- Header -->
+    <div class="flex items-start justify-between gap-3 px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+      <div class="min-w-0">
+        <p class="text-xs text-slate-400 dark:text-slate-500 mb-0.5">Deep Score</p>
+        <p class="text-sm font-mono text-slate-700 dark:text-slate-300 truncate">{new URL(deepScoreUrl).pathname || '/'}</p>
+      </div>
+      <button onclick={closeDeepScore} class="shrink-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-xl leading-none">✕</button>
+    </div>
+
+    <!-- Body -->
+    <div class="flex-1 overflow-y-auto px-6 py-5">
+      {#if deepScoreLoading}
+        <div class="flex flex-col items-center justify-center h-48 gap-3 text-slate-500 dark:text-slate-400">
+          <div class="w-8 h-8 border-2 border-slate-300 dark:border-slate-700 border-t-slate-700 dark:border-t-slate-300 rounded-full animate-spin"></div>
+          <p class="text-sm">Analyse en cours…</p>
+        </div>
+
+      {:else if deepScoreError}
+        <p class="text-sm text-red-600 dark:text-red-400">{deepScoreError}</p>
+
+      {:else if deepScoreResult}
+        {@const s = deepScoreResult.scores}
+
+        <!-- Score global -->
+        {#if s}
+          <div class="flex items-center gap-5 mb-6">
+            <div class="text-5xl font-bold {scoreColor(s.global)}">{s.global}</div>
+            <div class="flex-1">
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Score global</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Basé sur {deepScoreResult.results?.filter(r => r.status !== 'skipped').length ?? 0} signaux analysés</p>
+            </div>
+          </div>
+
+          <!-- Scores par catégorie -->
+          <div class="grid grid-cols-3 gap-2 mb-6">
+            {#each CATEGORIES as cat}
+              {@const val = (s as Record<string, number | null>)[cat === 'seo_technique' ? 'seo_technique' : cat === 'seo_local' ? 'seo_local' : cat]}
+              {#if val !== null && val !== undefined}
+                <div class="rounded-lg border p-2.5 text-center {scoreBg(val)}">
+                  <p class="text-lg font-bold {scoreColor(val)}">{val}</p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">{categoryLabel(cat)}</p>
+                </div>
+              {/if}
+            {/each}
+          </div>
+        {/if}
+
+        <!-- Résultats par catégorie -->
+        {#each CATEGORIES as cat}
+          {@const catResults = groupedResults(deepScoreResult.results ?? [])[cat] ?? []}
+          {#if catResults.length > 0}
+            <div class="mb-5">
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{categoryLabel(cat)}</h3>
+              <div class="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
+                {#each catResults.sort((a, b) => { const o = { critical: 0, warning: 1, good: 2 }; return (o[a.status as keyof typeof o] ?? 3) - (o[b.status as keyof typeof o] ?? 3) }) as r}
+                  <div class="px-3 py-2.5">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs px-1.5 py-0.5 rounded {signalStatusColor(r.status)}">{r.status}</span>
+                      <span class="text-sm text-slate-700 dark:text-slate-300">{signalLabel(r.signalId)}</span>
+                      {#if r.score !== null}
+                        <span class="ml-auto text-sm font-medium {scoreColor(r.score)}">{r.score}</span>
+                      {/if}
+                    </div>
+                    {#if r.recommendations.length > 0 && r.status !== 'good'}
+                      <ul class="mt-1.5 space-y-0.5">
+                        {#each r.recommendations as rec}
+                          <li class="text-xs text-slate-500 dark:text-slate-400 pl-3 border-l-2 border-slate-200 dark:border-slate-700">{rec}</li>
+                        {/each}
+                      </ul>
+                    {/if}
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/if}
+        {/each}
+      {/if}
+    </div>
+  </div>
+{/if}
+
 <!-- Composant récursif arbre -->
 {#snippet TreeNodeView(node: TreeNode, expanded: Set<string>, statusBg: (c: number) => string, toggleNode: (p: string) => void, depth: number, isRoot: boolean)}
   {@const hasChildren = node.children.length > 0}
@@ -281,7 +436,7 @@
 
   <div class="{depth > 0 ? 'border-t border-slate-100 dark:border-slate-800' : ''}">
     <div
-      class="flex items-start gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors {hasChildren ? 'cursor-pointer' : ''}"
+      class="flex items-start gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group {hasChildren ? 'cursor-pointer' : ''}"
       style="padding-left: {1 + depth * 1.25}rem"
       onclick={hasChildren ? () => toggleNode(node.fullPath) : undefined}
       role={hasChildren ? 'button' : undefined}
@@ -323,6 +478,12 @@
         </div>
       {:else if hasChildren}
         <span class="shrink-0 text-xs text-slate-400 dark:text-slate-500">{node.children.length} page{node.children.length > 1 ? 's' : ''}</span>
+      {/if}
+      {#if p}
+        <button
+          onclick={(e) => { e.stopPropagation(); triggerDeepScore(p!.url) }}
+          class="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-xs px-2 py-0.5 rounded bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-300"
+        >Score</button>
       {/if}
     </div>
 
