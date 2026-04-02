@@ -267,7 +267,7 @@
         {/if}
       {:else if tree}
         <!-- Mode arbre -->
-        <TreeNodeView node={tree} {expanded} {statusBg} {toggleNode} depth={0} isRoot={true} />
+        {@render TreeNodeView(tree, expanded, statusBg, toggleNode, 0, true)}
       {/if}
     </div>
   {/if}
