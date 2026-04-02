@@ -34,7 +34,7 @@ app.get('/', async (c) => {
 
   const enriched = await Promise.all(rows.map(async (site) => {
     const [latestAudit] = await db
-      .select({ id: audits.id, status: audits.status, scores: audits.scores, completedAt: audits.completedAt })
+      .select({ id: audits.id, status: audits.status, scores: audits.scores, completedAt: audits.completedAt, crawlStatus: audits.crawlStatus })
       .from(audits)
       .where(and(eq(audits.siteId, site.id), eq(audits.status, 'completed')))
       .orderBy(audits.createdAt)
