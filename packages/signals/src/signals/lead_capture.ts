@@ -84,9 +84,7 @@ export const leadCapture: Signal = {
       recommendations: [
         '100% des visiteurs repartent sans laisser de contact — un formulaire de capture email permettrait de récupérer 3 à 8% du trafic comme prospects qualifiés.',
         'Solutions gratuites à fort impact : Brevo (ex-Sendinblue), Mailchimp, MailerLite. Déploiement en 1 heure.',
-        ctx.site.isEcommerce
-          ? 'Pour un e-commerce, une séquence de bienvenue email génère en moyenne 320% de revenus supplémentaires vs un email promotionnel standard.'
-          : 'Une newsletter mensuelle maintient le lien avec les prospects qui ne sont pas encore prêts à acheter — essentiel pour les cycles de vente longs.',
+        'Une newsletter mensuelle maintient le lien avec les prospects qui ne sont pas encore prêts à acheter — essentiel pour les cycles de vente longs.',
       ],
       summary: 'Aucune capture email / newsletter',
     }

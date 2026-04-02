@@ -60,9 +60,7 @@ export const videoPresence: Signal = {
       details: { detected: false },
       recommendations: [
         'Aucune vidéo détectée — les pages avec vidéo retiennent les visiteurs 2× plus longtemps, ce qui améliore les signaux comportementaux envoyés à Google.',
-        ctx.site.isEcommerce
-          ? 'Pour un e-commerce, une vidéo produit de 30–60 secondes augmente le taux de conversion de 25 à 80% selon les études Nielsen et Shopify.'
-          : 'Une vidéo de présentation "qui sommes-nous ?" ou un témoignage client renforce la confiance et réduit le taux de rebond en moins d\'une semaine.',
+        'Une vidéo de présentation "qui sommes-nous ?" ou un témoignage client renforce la confiance et réduit le taux de rebond en moins d\'une semaine.',
         'YouTube reste la plateforme gratuite la plus efficace — une chaîne YouTube alimente à la fois le site et le SEO vidéo sur Google.',
       ],
       summary: 'Aucune vidéo de présentation',

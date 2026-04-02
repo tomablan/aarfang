@@ -70,9 +70,7 @@ export const blogPresence: Signal = {
       recommendations: [
         'Aucune section blog ou actualités détectée — les sites qui publient régulièrement du contenu obtiennent en moyenne 3× plus de trafic organique que ceux qui n\'en publient pas.',
         'Un blog positionne votre entreprise comme experte dans son domaine et alimente les réseaux sociaux sans effort créatif supplémentaire.',
-        ctx.site.isEcommerce
-          ? 'Pour un e-commerce, des guides d\'achat et comparatifs capturent des requêtes à haute intention commerciale (ex : "meilleur [produit] 2025").'
-          : 'Pour un service B2B, 2 articles par mois suffisent pour générer des leads qualifiés via le SEO de longue traîne.',
+        'Pour un service B2B, 2 articles par mois suffisent pour générer des leads qualifiés via le SEO de longue traîne.',
       ],
       summary: 'Aucun blog ni section actualités',
     }

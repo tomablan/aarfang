@@ -44,11 +44,11 @@ export const sitesApi = {
   get: (token: string, id: string) => request<Site>(`/api/sites/${id}`, { token }),
   create: (token: string, data: { url: string; name: string; cmsType?: string }) =>
     request<Site>('/api/sites', { method: 'POST', token, body: JSON.stringify(data) }),
-  update: (token: string, id: string, data: Partial<{ name: string; isEcommerce: boolean; cmsType: string }>) =>
+  update: (token: string, id: string, data: Partial<{ name: string; cmsType: string }>) =>
     request<Site>(`/api/sites/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
   delete: (token: string, id: string) =>
     request<{ success: boolean }>(`/api/sites/${id}`, { method: 'DELETE', token }),
-  bulk: (token: string, sites: Array<{ url: string; name: string; cmsType?: string; isEcommerce?: boolean }>) =>
+  bulk: (token: string, sites: Array<{ url: string; name: string; cmsType?: string }>) =>
     request<{ results: Array<{ index: number; status: 'created' | 'error'; site?: { id: string; name: string; url: string }; error?: string }> }>(
       '/api/sites/bulk', { method: 'POST', token, body: JSON.stringify({ sites }) }
     ),
@@ -154,7 +154,7 @@ export const pageAuditsApi = {
 export interface User { id: string; email: string; firstName: string | null; lastName: string | null; role: string; orgId: string }
 export interface Org { name: string; slug: string; plan: string }
 export interface TechStack { cms?: string; ecommerce?: string; framework?: string; server?: string; cdn?: string; hosting?: string; language?: string; country?: string }
-export interface Site { id: string; orgId: string; url: string; name: string; cmsType: string | null; isEcommerce: boolean; status: string; aiSummary: string | null; aiSummaryAt: string | null; aiRecommendations: string | null; aiRecommendationsAt: string | null; techStack: TechStack | null; techStackAt: string | null; createdAt: string }
+export interface Site { id: string; orgId: string; url: string; name: string; cmsType: string | null; status: string; aiSummary: string | null; aiSummaryAt: string | null; aiRecommendations: string | null; aiRecommendationsAt: string | null; techStack: TechStack | null; techStackAt: string | null; createdAt: string }
 export interface SiteWithAudit extends Site { latestAudit: Audit | null }
 export interface AuditScores { global: number; technique: number; securite: number; conformite: number; seo_technique: number; seo_local: number; opportunites: number; sea: number; accessibilite: number; ecoconception: number }
 export interface CrawlProgress { crawled: number; discovered: number; currentUrl: string }

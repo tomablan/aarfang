@@ -62,7 +62,6 @@ export const sites = pgTable('sites', {
   url: varchar('url', { length: 2048 }).notNull(),
   name: varchar('name', { length: 255 }).notNull(),
   cmsType: cmsTypeEnum('cms_type'),
-  isEcommerce: boolean('is_ecommerce').notNull().default(false),
   status: siteStatusEnum('status').notNull().default('active'),
   aiSummary: text('ai_summary'),
   aiSummaryAt: timestamp('ai_summary_at'),

@@ -10,7 +10,6 @@
     name: string
     url: string
     cmsType: string
-    isEcommerce: boolean
     status: RowStatus
     error?: string
     siteId?: string
@@ -45,13 +44,12 @@
     const sep = first.includes(';') ? ';' : first.includes('\t') ? '\t' : ','
 
     // Mapper les colonnes depuis l'en-tête si présent
-    let colName = 0, colUrl = 1, colCms = 2, colEcommerce = 3
+    let colName = 0, colUrl = 1, colCms = 2
     if (hasHeader) {
       const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/['"]/g, ''))
       colName = headers.findIndex(h => h.includes('name') || h.includes('nom')) ?? 0
       colUrl = headers.findIndex(h => h.includes('url')) ?? 1
       colCms = headers.findIndex(h => h.includes('cms')) ?? 2
-      colEcommerce = headers.findIndex(h => h.includes('ecommerce') || h.includes('shop') || h.includes('boutique'))
       if (colName === -1) colName = 0
       if (colUrl === -1) colUrl = 1
       if (colCms === -1) colCms = 2
@@ -63,10 +61,8 @@
       const url = cols[colUrl]?.replace(/^["']|["']$/g, '').trim() ?? ''
       const cmsRaw = cols[colCms]?.replace(/^["']|["']$/g, '').trim().toLowerCase() ?? ''
       const cmsType = ['wordpress', 'prestashop'].includes(cmsRaw) ? cmsRaw : 'other'
-      const ecomRaw = colEcommerce >= 0 ? (cols[colEcommerce]?.replace(/^["']|["']$/g, '').trim().toLowerCase() ?? '') : ''
-      const isEcommerce = ['true', '1', 'oui', 'yes'].includes(ecomRaw)
 
-      return { name, url, cmsType, isEcommerce, status: 'pending' as RowStatus }
+      return { name, url, cmsType, status: 'pending' as RowStatus }
     }).filter(r => r.name || r.url)
   }
 
@@ -168,7 +164,6 @@
         url: r.url,
         name: r.name,
         cmsType: r.cmsType,
-        isEcommerce: r.isEcommerce,
       })))
 
       rows = rows.map((r, i) => {
@@ -235,7 +230,7 @@
       <textarea
         bind:value={pasteText}
         rows="6"
-        placeholder="name,url,cmsType,isEcommerce&#10;Acme Corp,https://acme.com,wordpress,false&#10;Boutique Dupont,https://dupont.fr,prestashop,true"
+        placeholder="name,url,cmsType&#10;Acme Corp,https://acme.com,wordpress&#10;Site Dupont,https://dupont.fr,prestashop"
         class="w-full font-mono text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-slate-400 text-slate-700 dark:text-slate-300"
       ></textarea>
       <button onclick={handlePaste} class="bg-slate-800 dark:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors">
@@ -256,14 +251,12 @@
     <!-- Format attendu -->
     <div class="mt-6 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
       <p class="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">Format CSV attendu</p>
-      <pre class="text-xs text-slate-500 dark:text-slate-500 font-mono leading-relaxed">name,url,cmsType,isEcommerce
-Mon client,https://example.com,wordpress,false
-Boutique X,https://shop.fr,prestashop,true
-Site vitrine,https://vitrine.fr,,</pre>
+      <pre class="text-xs text-slate-500 dark:text-slate-500 font-mono leading-relaxed">name,url,cmsType
+Mon client,https://example.com,wordpress
+Site vitrine,https://vitrine.fr,</pre>
       <ul class="mt-3 space-y-1 text-xs text-slate-400 dark:text-slate-500">
         <li>· <strong class="text-slate-600 dark:text-slate-400">name</strong> et <strong class="text-slate-600 dark:text-slate-400">url</strong> sont obligatoires</li>
         <li>· <strong class="text-slate-600 dark:text-slate-400">cmsType</strong> : wordpress, prestashop ou vide (= other)</li>
-        <li>· <strong class="text-slate-600 dark:text-slate-400">isEcommerce</strong> : true/false ou vide (= false)</li>
         <li>· Séparateur virgule, point-virgule ou tabulation détecté automatiquement</li>
         <li>· L'en-tête est optionnel</li>
       </ul>
@@ -292,7 +285,6 @@ Site vitrine,https://vitrine.fr,,</pre>
           <tr class="border-b border-slate-100 dark:border-slate-800">
             <th class="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400">Site</th>
             <th class="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hidden sm:table-cell">CMS</th>
-            <th class="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hidden sm:table-cell">E-com</th>
             <th class="px-4 py-2.5 w-8"></th>
           </tr>
         </thead>
@@ -317,11 +309,6 @@ Site vitrine,https://vitrine.fr,,</pre>
                 </div>
               </td>
               <td class="px-4 py-2.5 text-xs text-slate-500 dark:text-slate-400 hidden sm:table-cell">{row.cmsType}</td>
-              <td class="px-4 py-2.5 hidden sm:table-cell">
-                {#if row.isEcommerce}
-                  <span class="text-xs bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded">Oui</span>
-                {/if}
-              </td>
               <td class="px-4 py-2.5 text-right">
                 <button onclick={() => removeRow(i)} class="text-slate-300 dark:text-slate-700 hover:text-red-400 dark:hover:text-red-500 transition-colors" title="Supprimer">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

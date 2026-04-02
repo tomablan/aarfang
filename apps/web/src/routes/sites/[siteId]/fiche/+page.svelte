@@ -171,12 +171,6 @@
                 </div>
               {/each}
             </div>
-            {#if site.isEcommerce}
-              <div class="mt-3 flex items-center gap-2 text-xs text-slate-500">
-                <span class="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 rounded-full font-medium">E-commerce</span>
-                <span>configuré pour les signaux vente en ligne</span>
-              </div>
-            {/if}
           {:else}
             <p class="text-sm text-slate-400 dark:text-slate-600 py-2">
               Stack non encore détecté — lancer un audit pour analyser le site.

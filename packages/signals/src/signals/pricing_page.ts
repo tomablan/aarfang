@@ -7,17 +7,6 @@ export const pricingPage: Signal = {
   weight: 2,
 
   async analyze(ctx: AuditContext): Promise<SignalResult> {
-    // E-commerce : les prix sont sur les fiches produit, ce signal n'est pas pertinent
-    if (ctx.site.isEcommerce) {
-      return {
-        score: 0,
-        status: 'skipped',
-        details: { reason: 'Non applicable pour un site e-commerce' },
-        recommendations: [],
-        summary: 'Non applicable (e-commerce)',
-      }
-    }
-
     const $ = load(ctx.page.html)
     const html = ctx.page.html.toLowerCase()
 

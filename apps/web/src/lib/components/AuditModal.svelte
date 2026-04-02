@@ -8,14 +8,12 @@
 
   interface Props {
     siteName: string
-    isEcommerce: boolean
-    onconfirm: (opts: { crawlFile: File | null; isEcommerce: boolean; crawlMode: 'none' | 'auto' | 'file'; crawlOptions: CrawlOptions }) => void
+    onconfirm: (opts: { crawlFile: File | null; crawlMode: 'none' | 'auto' | 'file'; crawlOptions: CrawlOptions }) => void
     oncancel: () => void
   }
 
-  let { siteName, isEcommerce: initialEcommerce, onconfirm, oncancel }: Props = $props()
+  let { siteName, onconfirm, oncancel }: Props = $props()
 
-  let isEcommerce = $state(initialEcommerce)
   let crawlMode = $state<'none' | 'auto' | 'file'>('auto')
   let crawlFile = $state<File | null>(null)
   let dragging = $state(false)
@@ -55,7 +53,6 @@
     const contentTypes = [...(includeHtml ? ['html'] : []), ...(includePdf ? ['pdf'] : [])]
     onconfirm({
       crawlFile: crawlMode === 'file' ? crawlFile : null,
-      isEcommerce,
       crawlMode,
       crawlOptions: { maxPages, delayMs, contentTypes: contentTypes.length ? contentTypes : ['html'], respectRobots: true },
     })
@@ -81,22 +78,6 @@
     </div>
 
     <div class="px-6 py-5 space-y-5">
-
-      <!-- Toggle e-commerce -->
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Site e-commerce</p>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Active les signaux liés à la vente en ligne</p>
-        </div>
-        <button
-          onclick={() => isEcommerce = !isEcommerce}
-          role="switch"
-          aria-checked={isEcommerce}
-          class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600 focus:ring-offset-2 {isEcommerce ? 'bg-slate-800 dark:bg-slate-700' : 'bg-slate-300 dark:bg-slate-600'}"
-        >
-          <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform {isEcommerce ? 'translate-x-6' : 'translate-x-1'}"></span>
-        </button>
-      </div>
 
       <!-- Sélecteur de mode crawl -->
       <div>

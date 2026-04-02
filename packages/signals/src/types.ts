@@ -64,7 +64,6 @@ export interface AuditContext {
     url: string
     name: string
     cmsType: string | null
-    isEcommerce: boolean
   }
   page: FetchedPage
   integrations: IntegrationCredentials

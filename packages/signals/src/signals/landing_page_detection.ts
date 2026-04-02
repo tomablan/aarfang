@@ -125,9 +125,7 @@ export const landingPageDetection: Signal = {
         },
         recommendations: [
           'Des pages de conversion sont détectées mais restent peu nombreuses — multiplier les landing pages par offre, par segment ou par canal permet d\'augmenter le taux de conversion de 30 à 55% vs une page générique.',
-          ctx.site.isEcommerce
-            ? 'Pour un e-commerce, créez une landing page par campagne Google Shopping ou Meta Ads avec le produit phare, un témoignage et un bouton d\'achat unique — sans le menu de navigation.'
-            : 'Une landing page efficace = 1 offre + 1 audience + 1 CTA. Supprimez la navigation pour réduire les distractions et doubler le taux de conversion.',
+          'Une landing page efficace = 1 offre + 1 audience + 1 CTA. Supprimez la navigation pour réduire les distractions et doubler le taux de conversion.',
         ],
         summary: evidence,
       }
@@ -144,9 +142,7 @@ export const landingPageDetection: Signal = {
         homepageIsLanding,
       },
       recommendations: [
-        ctx.site.isEcommerce
-          ? 'Aucune landing page dédiée détectée — envoyer du trafic payant (Google Ads, Meta Ads) directement sur la homepage génère en moyenne 2× moins de conversions qu\'une landing page ciblée.'
-          : 'Aucune landing page de conversion détectée — sans page dédiée, chaque euro investi en publicité est gaspillé à 60-70% faute de continuité entre l\'annonce et la page d\'atterrissage.',
+        'Aucune landing page de conversion détectée — sans page dédiée, chaque euro investi en publicité est gaspillé à 60-70% faute de continuité entre l\'annonce et la page d\'atterrissage.',
         'Une landing page se crée en quelques heures avec des outils no-code (Unbounce, Instapage, ou une simple page WordPress) et peut multiplier le ROI publicitaire par 2 à 4.',
         !ctx.crawl
           ? 'Activez le crawl intégré pour une détection plus précise des pages de conversion sur l\'ensemble du site.'

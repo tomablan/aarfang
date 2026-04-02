@@ -51,11 +51,10 @@ app.post('/', async (c) => {
   const role = c.get('role') as string
   if (!isPrivileged(role)) return c.json({ error: 'Forbidden — admin or owner required' }, 403)
 
-  const { url, name, cmsType, isEcommerce } = await c.req.json<{
+  const { url, name, cmsType } = await c.req.json<{
     url: string
     name: string
     cmsType?: 'wordpress' | 'prestashop' | 'other'
-    isEcommerce?: boolean
   }>()
   if (!url || !name) return c.json({ error: 'url and name are required' }, 400)
 
@@ -68,7 +67,6 @@ app.post('/', async (c) => {
     url: normalizedUrl,
     name: name.trim(),
     cmsType: cmsType ?? 'other',
-    isEcommerce: isEcommerce ?? false,
   }).returning()
 
   return c.json(site, 201)
@@ -81,7 +79,7 @@ app.post('/bulk', async (c) => {
   if (!isPrivileged(role)) return c.json({ error: 'Forbidden — admin or owner required' }, 403)
 
   const { sites: toImport } = await c.req.json<{
-    sites: Array<{ url: string; name: string; cmsType?: string; isEcommerce?: boolean }>
+    sites: Array<{ url: string; name: string; cmsType?: string }>
   }>()
 
   if (!Array.isArray(toImport) || toImport.length === 0) {
@@ -109,7 +107,6 @@ app.post('/bulk', async (c) => {
           url: normalizedUrl,
           name: item.name.trim(),
           cmsType,
-          isEcommerce: item.isEcommerce ?? false,
         }).returning({ id: sites.id, name: sites.name, url: sites.url })
 
         return { index: i, status: 'created', site }
@@ -146,7 +143,7 @@ app.put('/:siteId', async (c) => {
   const { siteId } = c.req.param()
   if (!isPrivileged(role)) return c.json({ error: 'Forbidden — admin or owner required' }, 403)
 
-  const body = await c.req.json<Partial<{ url: string; name: string; cmsType: 'wordpress' | 'prestashop' | 'other'; isEcommerce: boolean; status: 'active' | 'paused' | 'archived' }>>()
+  const body = await c.req.json<Partial<{ url: string; name: string; cmsType: 'wordpress' | 'prestashop' | 'other'; status: 'active' | 'paused' | 'archived' }>>()
   const db = getDb()
   const [site] = await db.update(sites).set(body)
     .where(and(eq(sites.id, siteId), eq(sites.orgId, orgId))).returning()
@@ -213,7 +210,6 @@ app.post('/:siteId/summary', async (c) => {
       name: site.name,
       url: site.url,
       cmsType: site.cmsType,
-      isEcommerce: site.isEcommerce,
     },
     scores: latestAudit.scores,
     issues: results
@@ -280,7 +276,6 @@ app.post('/:siteId/recommendations', async (c) => {
       name: site.name,
       url: site.url,
       cmsType: site.cmsType,
-      isEcommerce: site.isEcommerce,
     },
     scores: latestAudit.scores,
     issues: results

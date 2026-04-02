@@ -60,13 +60,11 @@ export const legalPages: Signal = {
     const mentionsLegales = detectLegalLink($, LEGAL_PATTERNS.mentionsLegales)
     const confidentialite = detectLegalLink($, LEGAL_PATTERNS.confidentialite)
     const cgu = detectLegalLink($, LEGAL_PATTERNS.cgu)
-    const cgv = ctx.site.isEcommerce ? detectLegalLink($, LEGAL_PATTERNS.cgv) : null
 
     const details = {
       mentionsLegales: mentionsLegales ? { found: true, href: mentionsLegales.href } : { found: false },
       confidentialite: confidentialite ? { found: true, href: confidentialite.href } : { found: false },
       cgu: cgu ? { found: true, href: cgu.href } : { found: false },
-      ...(ctx.site.isEcommerce ? { cgv: cgv ? { found: true, href: cgv.href } : { found: false } } : {}),
     }
 
     const recommendations: string[] = []
@@ -86,16 +84,10 @@ export const legalPages: Signal = {
     }
 
     if (cgu) found.push('CGU')
-    if (cgv) found.push('CGV')
 
     const hasMandatory = !!mentionsLegales && !!confidentialite
     const hasOneMandatory = !!mentionsLegales || !!confidentialite
     const mandatoryMissing = missing.filter((m) => m === 'Mentions légales' || m === 'Politique de confidentialité')
-    const cgvMissing = ctx.site.isEcommerce && !cgv
-
-    if (cgvMissing) {
-      recommendations.push('Les CGV sont obligatoires pour tout site e-commerce en France (art. L441-1 Code de commerce) — leur absence expose à une amende de 15 000 €.')
-    }
 
     let score: number
     let status: 'good' | 'warning' | 'critical'
@@ -109,11 +101,6 @@ export const legalPages: Signal = {
       score = 40
       status = 'critical'
       summary = `Manquant : ${mandatoryMissing.join(', ')}`
-    } else if (cgvMissing) {
-      // Mentions légales + confidentialité OK mais CGV absentes sur e-commerce
-      score = 60
-      status = 'warning'
-      summary = `CGV manquantes${found.length > 0 ? ' · ' + found.join(' · ') : ''}`
     } else {
       score = 100
       status = 'good'

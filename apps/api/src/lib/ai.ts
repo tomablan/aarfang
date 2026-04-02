@@ -30,7 +30,6 @@ export interface AiSummaryInput {
     name: string
     url: string
     cmsType: string | null
-    isEcommerce: boolean
   }
   scores: {
     global: number
@@ -69,7 +68,6 @@ DONNÉES DU SITE :
 - Nom : ${site.name}
 - URL : ${site.url}
 - CMS : ${site.cmsType ?? 'Non détecté'}
-- E-commerce : ${site.isEcommerce ? 'Oui' : 'Non'}
 
 SCORES D'AUDIT :
 - Score global : ${scores.global}/100
@@ -110,7 +108,6 @@ export interface AiRecommendationsInput {
     name: string
     url: string
     cmsType: string | null
-    isEcommerce: boolean
   }
   scores: {
     global: number
@@ -145,7 +142,6 @@ SITE AUDITÉ :
 - Nom : ${site.name}
 - URL : ${site.url}
 - CMS : ${site.cmsType ?? 'Non détecté'}
-- Type : ${site.isEcommerce ? 'Site e-commerce' : 'Site vitrine / service'}
 
 SCORES D'AUDIT :
 - Score global : ${scores.global}/100

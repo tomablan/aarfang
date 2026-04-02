@@ -150,19 +150,13 @@
   let crawlProgress = $state<{ crawled: number; discovered: number } | null>(null)
   let crawlStatusMsg = $state('')
 
-  async function startAudit(opts: { crawlFile: File | null; isEcommerce: boolean; crawlMode: 'none' | 'auto' | 'file'; crawlOptions: Record<string, unknown> }) {
+  async function startAudit(opts: { crawlFile: File | null; crawlMode: 'none' | 'auto' | 'file'; crawlOptions: Record<string, unknown> }) {
     showModal = false
     if (auditing) return
     auditing = true
     auditError = ''
     crawlProgress = null
     crawlStatusMsg = ''
-
-    // Persister isEcommerce si changé
-    if (site && opts.isEcommerce !== site.isEcommerce) {
-      try { await sitesApi.update(token, siteId, { isEcommerce: opts.isEcommerce }) } catch {}
-      site = { ...site, isEcommerce: opts.isEcommerce }
-    }
 
     try {
       const { auditId } = await auditsApi.trigger(token, siteId, {
@@ -532,7 +526,6 @@
 {#if showModal && site}
   <AuditModal
     siteName={site.name}
-    isEcommerce={site.isEcommerce}
     onconfirm={startAudit}
     oncancel={() => showModal = false}
   />

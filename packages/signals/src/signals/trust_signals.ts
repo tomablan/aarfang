@@ -118,9 +118,6 @@ export const trustSignals: Signal = {
     if (!results.clientLogos.detected) {
       recommendations.push('Afficher les logos de clients ou partenaires connus renforce immédiatement la crédibilité.')
     }
-    if (ctx.site.isEcommerce && !results.paymentBadges.detected) {
-      recommendations.push('Aucun badge de paiement sécurisé détecté — les afficher réduit l\'abandon panier.')
-    }
     if (!results.guarantees.detected) {
       recommendations.push('Mettre en avant une garantie (satisfait ou remboursé, sans engagement…) lève les dernières hésitations à l\'achat.')
     }
