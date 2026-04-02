@@ -3,11 +3,70 @@
   import { page } from '$app/stores'
   import { onMount } from 'svelte'
   import { goto } from '$app/navigation'
-  import { authApi } from '$lib/api.js'
+  import { authApi, sitesApi, type SiteWithAudit } from '$lib/api.js'
   import { auth, setAuth, clearAuth, loadStoredToken } from '$lib/stores/auth.svelte.js'
+  import { scoreColor } from '$lib/utils.js'
 
   let { children } = $props()
-  const isAuthPage = $derived($page.url.pathname === '/login')
+
+  // ── Jumplist (Cmd+K) ──────────────────────────────────────────────────────────
+  let jumplistOpen = $state(false)
+  let jumplistSearch = $state('')
+  let jumplistSites = $state<SiteWithAudit[]>([])
+  let jumplistLoaded = $state(false)
+  let jumplistActive = $state(0)
+
+  const filteredJumplist = $derived(
+    (jumplistSearch
+      ? jumplistSites.filter(s =>
+          s.name.toLowerCase().includes(jumplistSearch.toLowerCase()) ||
+          s.url.toLowerCase().includes(jumplistSearch.toLowerCase())
+        )
+      : jumplistSites
+    ).slice(0, 8)
+  )
+
+  $effect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    jumplistSearch
+    jumplistActive = 0
+  })
+
+  async function openJumplist() {
+    jumplistOpen = true
+    jumplistSearch = ''
+    jumplistActive = 0
+    if (!jumplistLoaded) {
+      const token = loadStoredToken()
+      if (token) {
+        try {
+          jumplistSites = await sitesApi.list(token)
+          jumplistLoaded = true
+        } catch { /* ignore */ }
+      }
+    }
+  }
+
+  function closeJumplist() {
+    jumplistOpen = false
+  }
+
+  function handleJumplistKeydown(e: KeyboardEvent) {
+    if (!jumplistOpen) return
+    if (e.key === 'Escape') { closeJumplist(); return }
+    if (e.key === 'ArrowDown') { e.preventDefault(); jumplistActive = Math.min(jumplistActive + 1, filteredJumplist.length - 1) }
+    if (e.key === 'ArrowUp') { e.preventDefault(); jumplistActive = Math.max(jumplistActive - 1, 0) }
+    if (e.key === 'Enter' && filteredJumplist[jumplistActive]) {
+      goto(`/sites/${filteredJumplist[jumplistActive].id}`)
+      closeJumplist()
+    }
+  }
+
+  const isAuthPage = $derived(
+    $page.url.pathname === '/login' ||
+    $page.url.pathname === '/forgot-password' ||
+    $page.url.pathname === '/reset-password'
+  )
 
   // ── Thème ─────────────────────────────────────────────────────────────────
   let themeMode = $state<'light' | 'dark' | 'system'>('system')
@@ -48,7 +107,20 @@
     }
 
     document.addEventListener('click', handleDocClick)
-    return () => document.removeEventListener('click', handleDocClick)
+
+    function handleGlobalKeydown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        if (jumplistOpen) closeJumplist()
+        else openJumplist()
+      }
+      handleJumplistKeydown(e)
+    }
+    document.addEventListener('keydown', handleGlobalKeydown)
+    return () => {
+      document.removeEventListener('click', handleDocClick)
+      document.removeEventListener('keydown', handleGlobalKeydown)
+    }
   })
 
   function toggleTheme() {
@@ -114,6 +186,21 @@
       </a>
 
       <div class="flex items-center gap-1">
+        <!-- Jumplist search trigger -->
+        {#if auth.user && auth.user.role !== 'super_admin'}
+          <button
+            onclick={openJumplist}
+            class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-400 transition-colors border border-slate-200 dark:border-slate-700 mr-1"
+            title="Rechercher un site (⌘K)"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>
+            </svg>
+            <span class="text-xs hidden sm:inline">Rechercher</span>
+            <kbd class="hidden sm:inline text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-mono">⌘K</kbd>
+          </button>
+        {/if}
+
         <!-- Lien Sites (masqué pour super_admin) / Lien Admin -->
         {#if auth.user?.role === 'super_admin'}
           <a href="/superadmin" class="px-3 py-1.5 rounded-lg text-sm font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors">Administration</a>
@@ -227,4 +314,56 @@
       {@render children()}
     </main>
   </div>
+
+  <!-- Jumplist modal -->
+  {#if jumplistOpen}
+    <button class="fixed inset-0 bg-black/40 z-40" onclick={closeJumplist} aria-label="Fermer"></button>
+    <div class="fixed top-[20vh] left-1/2 -translate-x-1/2 z-50 w-full max-w-lg px-4">
+      <div class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <!-- Input -->
+        <div class="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+          <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>
+          </svg>
+          <input
+            type="text"
+            bind:value={jumplistSearch}
+            placeholder="Rechercher un site…"
+            autofocus
+            class="flex-1 bg-transparent text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none"
+          />
+          <kbd class="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-mono">Esc</kbd>
+        </div>
+
+        <!-- Results -->
+        {#if filteredJumplist.length === 0}
+          <p class="text-sm text-slate-400 dark:text-slate-500 text-center py-8">Aucun site trouvé</p>
+        {:else}
+          <div class="py-1 max-h-80 overflow-y-auto">
+            {#each filteredJumplist as site, i}
+              <a
+                href="/sites/{site.id}"
+                onclick={closeJumplist}
+                class="flex items-center gap-3 px-4 py-2.5 transition-colors {i === jumplistActive ? 'bg-slate-100 dark:bg-slate-800' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'}"
+              >
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{site.name}</p>
+                  <p class="text-xs text-slate-400 dark:text-slate-500 truncate">{new URL(site.url).hostname}</p>
+                </div>
+                {#if site.latestAudit?.scores}
+                  <span class="text-sm font-bold shrink-0 {scoreColor(site.latestAudit.scores.global)}">{site.latestAudit.scores.global}</span>
+                {/if}
+              </a>
+            {/each}
+          </div>
+        {/if}
+
+        <div class="px-4 py-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-3 text-[10px] text-slate-400 dark:text-slate-500">
+          <span>↑↓ naviguer</span>
+          <span>↵ ouvrir</span>
+          <span>Esc fermer</span>
+        </div>
+      </div>
+    </div>
+  {/if}
 {/if}

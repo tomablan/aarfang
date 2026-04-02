@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { sitesApi } from '$lib/api.js'
+  import { sitesApi, type SiteWithAudit } from '$lib/api.js'
   import { loadStoredToken } from '$lib/stores/auth.svelte.js'
   import { faviconUrl } from '$lib/utils.js'
 
@@ -23,6 +23,9 @@
   let importing = $state(false)
   let importedCount = $state(0)
   let errorCount = $state(0)
+  let skipExisting = $state(true)
+  let skippedCount = $state(0)
+  let existingSites = $state<SiteWithAudit[]>([])
 
   // ── Parsing CSV ─────────────────────────────────────────────────────────────
 
@@ -82,15 +85,33 @@
     return result
   }
 
+  async function loadExistingSites() {
+    const token = loadStoredToken()
+    if (token && existingSites.length === 0) {
+      try { existingSites = await sitesApi.list(token) } catch { /* ignore */ }
+    }
+  }
+
+  function applySkipFilter(parsed: ParsedRow[]): ParsedRow[] {
+    if (!skipExisting || existingSites.length === 0) { skippedCount = 0; return parsed }
+    const existingHostnames = new Set(existingSites.map(s => { try { return new URL(s.url).hostname } catch { return '' } }))
+    const filtered = parsed.filter(r => {
+      try { return !existingHostnames.has(new URL(r.url).hostname) } catch { return true }
+    })
+    skippedCount = parsed.length - filtered.length
+    return filtered
+  }
+
   function handleFile(file: File) {
     if (!file.name.endsWith('.csv') && file.type !== 'text/csv' && file.type !== 'text/plain') {
       parseError = 'Fichier CSV ou TXT uniquement'
       return
     }
     const reader = new FileReader()
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
-        rows = parseCsv(e.target?.result as string)
+        await loadExistingSites()
+        rows = applySkipFilter(parseCsv(e.target?.result as string))
         parseError = ''
         step = 'preview'
       } catch (err: any) {
@@ -114,10 +135,11 @@
 
   let pasteText = $state('')
 
-  function handlePaste() {
+  async function handlePaste() {
     if (!pasteText.trim()) { parseError = 'Collez du texte CSV'; return }
     try {
-      rows = parseCsv(pasteText)
+      await loadExistingSites()
+      rows = applySkipFilter(parseCsv(pasteText))
       parseError = ''
       step = 'preview'
     } catch (err: any) {
@@ -221,6 +243,12 @@
       </button>
     </div>
 
+    <!-- Option skip existing -->
+    <label class="flex items-center gap-2.5 mt-3 cursor-pointer select-none">
+      <input type="checkbox" bind:checked={skipExisting} class="w-4 h-4 rounded border-slate-300 dark:border-slate-600 accent-slate-800" />
+      <span class="text-sm text-slate-600 dark:text-slate-400">Ignorer les sites déjà présents (comparaison par domaine)</span>
+    </label>
+
     {#if parseError}
       <p class="mt-3 text-sm text-red-600 dark:text-red-400">{parseError}</p>
     {/if}
@@ -246,6 +274,9 @@ Site vitrine,https://vitrine.fr,,</pre>
     <div class="flex items-center justify-between mb-4">
       <div>
         <p class="font-semibold text-slate-800 dark:text-slate-100">{validRows.length} site{validRows.length > 1 ? 's' : ''} à importer</p>
+        {#if skippedCount > 0}
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{skippedCount} site{skippedCount > 1 ? 's' : ''} ignoré{skippedCount > 1 ? 's' : ''} (déjà présent{skippedCount > 1 ? 's' : ''})</p>
+        {/if}
         {#if invalidRows.length > 0}
           <p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5">{invalidRows.length} ligne{invalidRows.length > 1 ? 's' : ''} ignorée{invalidRows.length > 1 ? 's' : ''} (nom ou URL manquant)</p>
         {/if}

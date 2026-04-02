@@ -2,8 +2,9 @@ import { Hono } from 'hono'
 import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 import { getDb, users, organizations } from '@aarfang/db'
-import { signToken, verifyToken } from '../lib/jwt.js'
+import { signToken, verifyToken, signResetToken, verifyResetToken } from '../lib/jwt.js'
 import { authMiddleware } from '../middleware/auth.js'
+import { sendPasswordResetEmail } from '../lib/alerts.js'
 
 type Vars = { Variables: { orgId: string; userId: string; role: string } }
 const app = new Hono<Vars>()
@@ -90,6 +91,44 @@ app.put('/password', authMiddleware, async (c) => {
   await db.update(users).set({ passwordHash }).where(eq(users.id, userId))
 
   return c.json({ success: true })
+})
+
+// Mot de passe oublié — envoie un lien de réinitialisation par email
+app.post('/forgot-password', async (c) => {
+  const body = await c.req.json<{ email?: string }>().catch(() => ({ email: undefined }))
+  const { email } = body
+  if (!email) return c.json({ error: 'Email required' }, 400)
+
+  const db = getDb()
+  const [user] = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1)
+
+  // Toujours répondre OK pour ne pas révéler si l'email existe
+  if (!user) return c.json({ ok: true })
+
+  const token = await signResetToken(user.id)
+  await sendPasswordResetEmail(user.email, token).catch(err =>
+    console.error('[auth] Forgot password email failed:', err)
+  )
+
+  return c.json({ ok: true })
+})
+
+// Réinitialisation du mot de passe avec le token reçu par email
+app.post('/reset-password', async (c) => {
+  const resetBody = await c.req.json<{ token?: string; newPassword?: string }>().catch(() => ({ token: undefined, newPassword: undefined }))
+  const { token, newPassword } = resetBody
+  if (!token || !newPassword) return c.json({ error: 'token and newPassword are required' }, 400)
+  if (newPassword.length < 8) return c.json({ error: 'Le mot de passe doit contenir au moins 8 caractères' }, 400)
+
+  try {
+    const payload = await verifyResetToken(token)
+    const db = getDb()
+    const passwordHash = await bcrypt.hash(newPassword, 12)
+    await db.update(users).set({ passwordHash }).where(eq(users.id, payload.sub))
+    return c.json({ ok: true })
+  } catch {
+    return c.json({ error: 'Lien invalide ou expiré' }, 400)
+  }
 })
 
 export { app as authRoutes }

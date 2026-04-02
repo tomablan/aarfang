@@ -32,6 +32,10 @@ export const authApi = {
   me: (token: string) => request<{ user: User; org: Org }>('/api/auth/me', { token }),
   changePassword: (token: string, currentPassword: string, newPassword: string) =>
     request<{ success: boolean }>('/api/auth/password', { method: 'PUT', token, body: JSON.stringify({ currentPassword, newPassword }) }),
+  forgotPassword: (email: string) =>
+    request<{ ok: boolean }>('/api/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (token: string, newPassword: string) =>
+    request<{ ok: boolean }>('/api/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, newPassword }) }),
 }
 
 // Sites

@@ -209,3 +209,57 @@ export async function dispatchAlerts(
 
   await Promise.all(tasks)
 }
+
+// ─── Réinitialisation du mot de passe ─────────────────────────────────────────
+
+export async function sendPasswordResetEmail(to: string, resetToken: string): Promise<void> {
+  if (!env.SMTP_HOST) {
+    console.warn('[alerts] SMTP not configured — password reset email skipped')
+    return
+  }
+
+  const resetUrl = `${env.APP_URL}/reset-password?token=${encodeURIComponent(resetToken)}`
+
+  const html = `
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>Réinitialisation de mot de passe</title></head>
+<body style="font-family:system-ui,sans-serif;background:#f8fafc;padding:32px;margin:0">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden">
+    <div style="background:#1e293b;padding:20px 24px">
+      <p style="color:#fff;font-size:18px;font-weight:700;margin:0">aarfang</p>
+      <p style="color:#94a3b8;font-size:13px;margin:4px 0 0">Réinitialisation de mot de passe</p>
+    </div>
+    <div style="padding:28px 24px">
+      <p style="font-size:15px;color:#334155;margin-bottom:20px">
+        Vous avez demandé la réinitialisation de votre mot de passe.
+        Cliquez sur le bouton ci-dessous pour en choisir un nouveau.
+      </p>
+      <a href="${resetUrl}" style="display:inline-block;background:#1e293b;color:#fff;text-decoration:none;padding:11px 24px;border-radius:8px;font-size:13px;font-weight:600">
+        Réinitialiser mon mot de passe →
+      </a>
+      <p style="font-size:12px;color:#94a3b8;margin-top:20px">
+        Ce lien est valable <strong>15 minutes</strong>. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.
+      </p>
+      <p style="font-size:11px;color:#cbd5e1;margin-top:8px;word-break:break-all">${resetUrl}</p>
+    </div>
+  </div>
+</body>
+</html>`
+
+  const transporter = nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_PORT === 465,
+    auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
+  })
+
+  await transporter.sendMail({
+    from: env.SMTP_FROM,
+    to,
+    subject: 'Réinitialisation de votre mot de passe aarfang',
+    html,
+  })
+
+  console.log(`[alerts] Password reset email sent to ${to}`)
+}

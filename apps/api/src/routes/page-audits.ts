@@ -24,7 +24,7 @@ app.post('/sites/:siteId/page-audits', async (c) => {
   const [site] = await db.select().from(sites).where(eq(sites.id, siteId)).limit(1)
   if (!site) return c.json({ error: 'Site not found' }, 404)
 
-  const body = await c.req.json<{ url?: string }>().catch(() => ({}))
+  const body = await c.req.json<{ url?: string }>().catch(() => ({ url: undefined }))
   const url = body.url?.trim()
   if (!url) return c.json({ error: 'URL required' }, 400)
 

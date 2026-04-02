@@ -71,6 +71,40 @@
       site = s
       audit = a
       recentHistory = h
+
+      // Reprendre le polling si un audit est déjà en cours
+      if (!auditing && !pollingTimer) {
+        const inProgress = h.find(a => a.status === 'pending' || a.status === 'running')
+        if (inProgress) {
+          auditing = true
+          crawlStatusMsg = 'Audit en cours…'
+          pollingTimer = setInterval(async () => {
+            try {
+              const a = await auditsApi.get(token, inProgress.id)
+              if (a.crawlStatus === 'running' && a.crawlProgress) {
+                crawlProgress = a.crawlProgress
+                crawlStatusMsg = `Crawl en cours — ${a.crawlProgress.crawled} pages analysées`
+              } else if (a.crawlStatus === 'done') {
+                crawlProgress = null
+                crawlStatusMsg = 'Crawl terminé, analyse des signaux…'
+              } else {
+                crawlStatusMsg = 'Analyse en cours…'
+              }
+              if (a.status === 'completed' || a.status === 'failed') {
+                clearInterval(pollingTimer!)
+                pollingTimer = null
+                auditing = false
+                crawlProgress = null
+                crawlStatusMsg = ''
+                if (a.status === 'failed') {
+                  auditError = a.errorMessage ?? "L'audit a échoué."
+                }
+                await loadData()
+              }
+            } catch { /* non bloquant */ }
+          }, 3000)
+        }
+      }
     } catch {
       goto('/login')
     } finally {

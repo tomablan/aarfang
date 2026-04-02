@@ -131,6 +131,11 @@
         class="w-full bg-slate-800 dark:bg-slate-700 text-white py-2 rounded-lg text-sm font-medium hover:bg-slate-700 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors">
         {loading ? 'Connexion…' : 'Se connecter'}
       </button>
+      <p class="text-center">
+        <a href="/forgot-password" class="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
+          Mot de passe oublié ?
+        </a>
+      </p>
     </form>
   </div>
 </div>
