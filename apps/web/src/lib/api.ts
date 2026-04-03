@@ -156,7 +156,7 @@ export interface Org { name: string; slug: string; plan: string }
 export interface TechStack { cms?: string; ecommerce?: string; framework?: string; server?: string; cdn?: string; hosting?: string; language?: string; country?: string }
 export interface Site { id: string; orgId: string; url: string; name: string; cmsType: string | null; status: string; aiSummary: string | null; aiSummaryAt: string | null; aiRecommendations: string | null; aiRecommendationsAt: string | null; techStack: TechStack | null; techStackAt: string | null; createdAt: string }
 export interface SiteWithAudit extends Site { latestAudit: Audit | null }
-export interface AuditScores { global: number; technique: number; securite: number; conformite: number; seo_technique: number; seo_local: number; opportunites: number; sea: number; accessibilite: number; ecoconception: number }
+export interface AuditScores { global: number; technique: number; securite: number; conformite: number; seo_technique: number; seo_local: number; opportunites: number; sea: number; accessibilite: number; ecoconception: number; geo: number }
 export interface CrawlProgress { crawled: number; discovered: number; currentUrl: string }
 export interface Audit { id: string; siteId: string; status: string; scores: AuditScores | null; startedAt: string | null; completedAt: string | null; createdAt: string; errorMessage: string | null; crawlStatus: string | null; crawlProgress: CrawlProgress | null }
 export interface AuditResult { id: string; signalId: string; category: string; score: number | null; status: string; details: Record<string, unknown>; recommendations: string[] }

@@ -56,6 +56,11 @@ import { ecoCachePolicy } from './signals/eco_cache_policy.js'
 import { ecoImageOptimization } from './signals/eco_image_optimization.js'
 import { ecoThirdPartyScripts } from './signals/eco_third_party_scripts.js'
 import { ecoFonts } from './signals/eco_fonts.js'
+import { geoAuthorExpertise } from './signals/geo_author_expertise.js'
+import { geoFaqSchema } from './signals/geo_faq_schema.js'
+import { geoExternalSources } from './signals/geo_external_sources.js'
+import { geoStructuredContent } from './signals/geo_structured_content.js'
+import { geoEeatAi } from './signals/geo_eeat_ai.js'
 
 // Registre de tous les signaux disponibles
 export const ALL_SIGNALS: Signal[] = [
@@ -125,6 +130,12 @@ export const ALL_SIGNALS: Signal[] = [
   ecoImageOptimization,
   ecoThirdPartyScripts,
   ecoFonts,
+  // GEO — Generative Engine Optimization / E-E-A-T
+  geoAuthorExpertise,
+  geoFaqSchema,
+  geoExternalSources,
+  geoStructuredContent,
+  geoEeatAi,
 ]
 
 export async function runSignals(ctx: AuditContext): Promise<AuditSignalResult[]> {

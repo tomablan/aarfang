@@ -65,7 +65,7 @@
     deepScoreLoading = false
   }
 
-  const CATEGORIES = ['technique', 'securite', 'conformite', 'seo_technique', 'seo_local', 'opportunites', 'sea', 'accessibilite', 'ecoconception'] as const
+  const CATEGORIES = ['technique', 'securite', 'conformite', 'seo_technique', 'seo_local', 'opportunites', 'sea', 'accessibilite', 'ecoconception', 'geo'] as const
 
   function groupedResults(results: PageAuditResult[]): Record<string, PageAuditResult[]> {
     const out: Record<string, PageAuditResult[]> = {}

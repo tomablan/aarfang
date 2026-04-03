@@ -8,6 +8,7 @@ export type SignalCategory =
   | 'sea'
   | 'accessibilite'
   | 'ecoconception'
+  | 'geo'
 
 export type SignalStatus = 'good' | 'warning' | 'critical' | 'skipped'
 
@@ -31,6 +32,8 @@ export interface IntegrationCredentials {
   betterstack?: { apiToken: string }
   wordpress?: { url: string; applicationPassword: string }
   prestashop?: { url: string; apiKey: string }
+  claude?: { apiKey: string }
+  openai?: { apiKey: string }
 }
 
 /** Une ligne de crawl issue de l'export CSV Screaming Frog (Internal HTML) */
@@ -104,4 +107,5 @@ export interface AuditScores {
   sea: number
   accessibilite: number
   ecoconception: number
+  geo: number
 }

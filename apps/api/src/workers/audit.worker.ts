@@ -57,6 +57,8 @@ export async function runAudit(auditId: string, site: Site, crawlData?: CrawlDat
       betterstack: rawIntegrations.betterstack as { apiToken: string } | undefined,
       wordpress: rawIntegrations.wordpress as { url: string; applicationPassword: string } | undefined,
       prestashop: rawIntegrations.prestashop as { url: string; apiKey: string } | undefined,
+      claude: rawIntegrations.claude as { apiKey: string } | undefined,
+      openai: rawIntegrations.openai as { apiKey: string } | undefined,
     }
 
     const ctx = await buildAuditContext(site, integrations, crawlData)

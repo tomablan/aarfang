@@ -25,6 +25,8 @@ export async function runPageAudit(pageAuditId: string, site: Site, url: string)
       betterstack: rawIntegrations.betterstack as { apiToken: string } | undefined,
       wordpress: rawIntegrations.wordpress as { url: string; applicationPassword: string } | undefined,
       prestashop: rawIntegrations.prestashop as { url: string; apiKey: string } | undefined,
+      claude: rawIntegrations.claude as { apiKey: string } | undefined,
+      openai: rawIntegrations.openai as { apiKey: string } | undefined,
     }
 
     // Construire le contexte avec l'URL de la page cible (pas celle du site)

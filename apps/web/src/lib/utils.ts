@@ -32,6 +32,7 @@ export function categoryLabel(cat: string): string {
     sea: 'SEA & Tracking',
     accessibilite: 'Accessibilité',
     ecoconception: 'Éco-conception',
+    geo: 'GEO / E-E-A-T',
   }
   return labels[cat] ?? cat
 }
@@ -47,6 +48,7 @@ export function categoryDescription(cat: string): string {
     opportunites: 'L\'expérience de navigation évalue la capacité du site à convertir les visiteurs en contacts ou clients : clarté des appels à l\'action, facilité de contact, éléments de réassurance.',
     sea: 'La maturité SEA mesure la préparation du site pour les campagnes publicitaires payantes. Un tracking mal configuré gaspille le budget publicitaire et empêche d\'optimiser les conversions.',
     ecoconception: 'L\'éco-conception réduit l\'empreinte environnementale du site (énergie, bande passante, requêtes réseau). Elle améliore aussi la performance perçue et réduit les coûts d\'infrastructure.',
+    geo: 'Le GEO (Generative Engine Optimization) évalue la capacité du site à être cité et recommandé par les moteurs d\'IA (ChatGPT, Perplexity, Google SGE). Il repose sur les critères E-E-A-T de Google : Expérience, Expertise, Autorité et Fiabilité.',
   }
   return descriptions[cat] ?? ''
 }
@@ -110,6 +112,11 @@ export function signalLabel(id: string): string {
     eco_image_optimization: 'Optimisation des images (lazy loading, formats modernes)',
     eco_third_party_scripts: 'Scripts et domaines tiers',
     eco_fonts: 'Polices web externes',
+    geo_author_expertise: 'Expertise & expérience auteur (E-E)',
+    geo_faq_schema: 'FAQ structurée (FAQPage JSON-LD)',
+    geo_external_sources: 'Sources et citations d\'autorité',
+    geo_structured_content: 'Structure de contenu (lisibilité LLM)',
+    geo_eeat_ai: 'Analyse E-E-A-T par IA',
   }
   return labels[id] ?? id
 }

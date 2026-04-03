@@ -35,7 +35,7 @@
     recentHistory.filter((a) => a.status === 'completed').map((a) => a.scores?.global ?? 0).slice(-10)
   )
 
-  const categories = ['securite', 'conformite', 'accessibilite', 'technique', 'seo_technique', 'seo_local', 'opportunites', 'sea', 'ecoconception']
+  const categories = ['securite', 'conformite', 'accessibilite', 'technique', 'seo_technique', 'seo_local', 'opportunites', 'sea', 'ecoconception', 'geo']
 
   function resultsByCategory(cat: string): AuditResult[] {
     return (audit?.results ?? []).filter((r) => r.category === cat)
