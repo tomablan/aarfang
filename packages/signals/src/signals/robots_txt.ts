@@ -15,7 +15,17 @@ export const robotsTxt: Signal = {
         return { score: 20, status: 'warning', details: { url: robotsUrl, statusCode: res.status }, recommendations: ['Créer un fichier robots.txt pour contrôler l\'indexation.'], summary: `robots.txt absent (HTTP ${res.status})` }
       }
       const text = await res.text()
-      const hasDisallowAll = /Disallow:\s*\//m.test(text) && /User-agent:\s*\*/m.test(text)
+      // Vérifier uniquement si le bloc User-agent: * contient exactement Disallow: /
+      const hasDisallowAll = (() => {
+        const lines = text.split('\n').map((l) => l.split('#')[0].trim()).filter(Boolean)
+        let inStarBlock = false
+        for (const line of lines) {
+          if (/^User-agent:\s*\*$/i.test(line)) { inStarBlock = true; continue }
+          if (/^User-agent:/i.test(line)) { inStarBlock = false; continue }
+          if (inStarBlock && /^Disallow:\s*\/\s*$/i.test(line)) return true
+        }
+        return false
+      })()
       const hasSitemapRef = /Sitemap:/i.test(text)
 
       if (hasDisallowAll) {

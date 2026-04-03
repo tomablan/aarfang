@@ -28,16 +28,15 @@ export const crawlBrokenPages: Signal = {
     const score = has5xx ? 0 : ratio > 0.1 ? 10 : ratio > 0.05 ? 30 : ratio > 0.02 ? 50 : 70
     const status = score < 40 ? 'critical' : 'warning'
 
-    const examples = broken.slice(0, 10).map((r) => ({ url: r.url, status: r.statusCode }))
     const statusSummary = Object.entries(byStatus).map(([s, urls]) => `${urls.length} × ${s}`).join(', ')
+    const pages = broken.slice(0, 10).map((r) => ({ url: r.url, statusCode: r.statusCode, inlinks: r.inlinks }))
 
     return {
       score,
       status,
-      details: { total, broken: count, byStatus: Object.fromEntries(Object.entries(byStatus).map(([k, v]) => [k, v.slice(0, 5)])) },
+      details: { total, broken: count, pages, byStatus: Object.fromEntries(Object.entries(byStatus).map(([k, v]) => [k, v.length])) },
       recommendations: [`${count} page(s) en erreur (${statusSummary}). Corriger ou rediriger ces URLs.`],
       summary: `${count}/${total} pages en erreur · ${statusSummary}`,
-      ...(examples.length > 0 ? {} : {}),
     }
   },
 }

@@ -95,6 +95,37 @@ async function queryAnalytics(
   return data.rows?.[0] ?? { clicks: 0, impressions: 0, ctr: 0, position: 0 }
 }
 
+interface KeywordRow { query: string; impressions: number; clicks: number; ctr: number; position: number }
+
+/** Retourne les mots-clés en position 4–20 avec 20+ impressions (opportunités top 3 / top 10). */
+async function queryOpportunities(
+  gscSiteUrl: string,
+  accessToken: string,
+  startDate: string,
+  endDate: string,
+): Promise<KeywordRow[]> {
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(gscSiteUrl)}/searchAnalytics/query`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ startDate, endDate, dimensions: ['query'], rowLimit: 100 }),
+        signal: AbortSignal.timeout(15_000),
+      },
+    )
+    if (!res.ok) return []
+    const data = await res.json() as { rows?: KeywordRow[] }
+    const rows = data.rows ?? []
+    return rows
+      .filter((r) => r.position >= 4 && r.position <= 20 && r.impressions >= 20)
+      .sort((a, b) => a.position - b.position)
+      .slice(0, 15)
+  } catch {
+    return []
+  }
+}
+
 export const gscSearchPerformance: Signal = {
   id: 'gsc_search_performance',
   category: 'seo_local',
@@ -132,9 +163,10 @@ export const gscSearchPerformance: Signal = {
       const prevEndDate = dateStr(93)
       const prevStartDate = dateStr(183)
 
-      const [current, previous] = await Promise.all([
+      const [current, previous, opportunities] = await Promise.all([
         queryAnalytics(gscSiteUrl, accessToken, startDate, endDate),
         queryAnalytics(gscSiteUrl, accessToken, prevStartDate, prevEndDate),
+        queryOpportunities(gscSiteUrl, accessToken, startDate, endDate),
       ])
 
       if (!current) {
@@ -184,7 +216,10 @@ export const gscSearchPerformance: Signal = {
         score = Math.min(100, Math.round(posScore * 0.5 + ctrScore * 0.3 + 70 * 0.2))
         status = score >= 70 ? 'good' : 'warning'
         if (current.ctr < 0.02) recommendations.push(`CTR faible (${ctrPct}%) malgré une bonne visibilité — améliorer les snippets pour augmenter le taux de clic.`)
-        if (avgPosition && avgPosition > 10) recommendations.push(`Position moyenne ${avgPosition} — des opportunités existent pour passer en top 10.`)
+        if (avgPosition && avgPosition > 10) {
+          const opList = opportunities.slice(0, 5).map((k) => `"${k.query}" (pos. ${Math.round(k.position * 10) / 10}, ${k.impressions} impr.)`).join(', ')
+          recommendations.push(`Position moyenne ${avgPosition} — opportunités de passer en top 10 : ${opList || 'voir les mots-clés dans les détails'}.`)
+        }
       }
 
       const summaryParts = [`${impressionsFmt} impressions`, `${clicksFmt} clics`, `CTR ${ctrPct}%`]
@@ -205,6 +240,13 @@ export const gscSearchPerformance: Signal = {
           previous: previous
             ? { impressions: previous.impressions, clicks: previous.clicks }
             : null,
+          opportunities: opportunities.map((k) => ({
+            query: k.query,
+            position: Math.round(k.position * 10) / 10,
+            impressions: k.impressions,
+            clicks: k.clicks,
+            ctr: Math.round(k.ctr * 1000) / 10,
+          })),
         },
         recommendations,
         summary: summaryParts.join(' · '),

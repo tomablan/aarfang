@@ -8,7 +8,7 @@ const CATEGORY_WEIGHTS: Record<SignalCategory, number> = {
   seo_technique: 1.0,
   seo_local: 0.8,
   opportunites: 0.7,
-  sea: 0.6,
+  sea: 0,
   accessibilite: 0.8,
   ecoconception: 1.0,
   geo: 1.1,

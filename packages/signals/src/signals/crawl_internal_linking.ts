@@ -95,8 +95,8 @@ export const crawlInternalLinking: Signal = {
       status,
       details: {
         total,
-        orphans: { count: orphans.length, ratio: Math.round(orphanRatio * 100), examples: orphans.slice(0, 5).map((r) => r.url) },
-        underlinked: { count: underlinked.length, ratio: Math.round(underlinkedRatio * 100) },
+        orphans: { count: orphans.length, ratio: Math.round(orphanRatio * 100), pages: orphans.slice(0, 10).map((r) => r.url) },
+        underlinked: { count: underlinked.length, ratio: Math.round(underlinkedRatio * 100), pages: underlinked.slice(0, 10).map((r) => ({ url: r.url, inlinks: r.inlinks, depth: r.crawlDepth })) },
         overlinked: { count: overlinked.length },
         avgInlinks,
         medianInlinks,

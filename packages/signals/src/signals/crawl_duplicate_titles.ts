@@ -33,7 +33,7 @@ export const crawlDuplicateTitles: Signal = {
       return { score: 100, status: 'good', details: { total, duplicates: 0, groups: 0 }, recommendations: [], summary: `${total} pages — aucun doublon de titre` }
     }
 
-    const examples = duplicateGroups.slice(0, 5).map(([title, urls]) => ({ title: title.slice(0, 60), count: urls.length, examples: urls.slice(0, 3) }))
+    const examples = duplicateGroups.slice(0, 10).map(([title, urls]) => ({ title: title.slice(0, 80), count: urls.length, urls: urls.slice(0, 5) }))
     const score = ratio > 0.2 ? 20 : ratio > 0.1 ? 40 : ratio > 0.05 ? 60 : 75
     const status = score < 50 ? 'critical' : 'warning'
 
